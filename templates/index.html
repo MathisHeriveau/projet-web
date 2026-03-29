@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Control Skeleton{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+    <header class="topbar">
+        <div class="brand-lockup">
+            <img class="logo" src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo">
+            <div>
+                <p class="eyebrow">Control</p>
+                <h1>Squelette Flask</h1>
+            </div>
+        </div>
+
+        <nav class="topnav">
+            <a href="#backend">Backend</a>
+            <a href="#frontend">Frontend</a>
+            <a href="#data">Data</a>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <section class="panel" id="backend">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Routes Flask</p>
+                    <h2>Backend</h2>
+                </div>
+            </div>
+
+            <pre id="response-output" class="code-block">@app.route("/api/get-example")
+def api_get_example():
+    # TODO: recuperer les query params
+    return jsonify(...)
+
+
+@app.route("/api/post-example", methods=["POST"])
+def api_post_example():
+    # TODO: valider le JSON
+    return jsonify(...)
+
+
+@app.route("/api/run", methods=["GET", "POST"])
+def api_run():
+    # TODO: route unifiee
+    return jsonify(...)</pre>
+            <p class="small-note" id="data">Datasets:
+                {% for file in data_files %}
+                <code>{{ file }}</code>{% if not loop.last %}, {% endif %}
+                {% else %}
+                <code>aucun fichier</code>
+                {% endfor %}
+            </p>
+        </section>
+
+        <section class="panel" id="frontend">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">JS</p>
+                    <h2>Frontend</h2>
+                </div>
+            </div>
+
+            <pre class="code-block code-block--small">async function apiGet(url) {
+  // TODO
+}
+
+async function apiPost(url, payload) {
+  // TODO
+}
+
+async function runGetExample() {
+  // TODO
+}
+
+async function runPostExample() {
+  // TODO
+}
+
+function bindEvents() {
+  // TODO
+}
+
+function main() {
+  bindEvents();
+}
+
+main();</pre>
+        </section>
+    </main>
+</div>
+{% endblock %}
