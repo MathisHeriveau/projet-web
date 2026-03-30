@@ -3,10 +3,8 @@
 {% block title %}404{% endblock %}
 
 {% block content %}
-<main class="not-found">
-    <p class="eyebrow">404</p>
+<main>
     <h1>Page introuvable</h1>
-    <p>Chemin demande : <code>{{ requested_path }}</code></p>
-    <a href="{{ url_for('index') }}">Retour accueil</a>
+    <p><a href="{{ url_for('web.index') }}">Retour accueil</a></p>
 </main>
 {% endblock %}
