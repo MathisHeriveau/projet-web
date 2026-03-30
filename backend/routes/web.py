@@ -6,7 +6,7 @@ from .wrapper import login_required
 
 web_bp = Blueprint("web", __name__)
 
-@web_bp.get("/")
+@web_bp.route("/")
 def home():
     """
     Home page
@@ -15,21 +15,21 @@ def home():
     # else, redirect to login page
     pass
 
-@web_bp.get("/register")
+@web_bp.route("/register")
 def register():
     """
     Register page
     """
     pass
 
-@web_bp.get("/login")
+@web_bp.route("/login")
 def login():
     """
     Login page
     """
     pass
 
-@web_bp.get("/account")
+@web_bp.route("/account")
 @login_required
 def account():
     """
