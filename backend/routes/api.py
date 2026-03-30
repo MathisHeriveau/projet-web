@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify
 
-from ..db import DATABASE_LABEL
-
-from wrapper import login_required
+from .wrapper import login_required
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 

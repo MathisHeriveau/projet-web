@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, render_template
 
-from ..db import DATABASE_LABEL
-
-from wrapper import login_required
+from .wrapper import login_required
 
 web_bp = Blueprint("web", __name__)
 
