@@ -33,8 +33,8 @@ def create_app() -> Flask:
     app.register_blueprint(web_bp)
     app.register_blueprint(api_bp)
 
-    @app.errorhandler(404)
-    def not_found(_error):
-        return render_template("404.html"), 404
+    # @app.errorhandler(404)
+    # def not_found(_error):
+    #     return render_template("404.html"), 404
 
     return app
