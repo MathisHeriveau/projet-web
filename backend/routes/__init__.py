@@ -1,0 +1,1 @@
+"""Routes Flask simples."""
