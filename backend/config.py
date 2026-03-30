@@ -1,1 +1,1 @@
-APP_NAME = "Projet Web"
+APP_NAME = "GenFlix"
