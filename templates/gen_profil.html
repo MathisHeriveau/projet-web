@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Premiere connexion{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gen_profil.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="gen-profile-page">
+    <div class="gen-bg"><img src="{{ url_for('static', filename='images/gen_bg-genereted-by-chatgpt.png') }}" alt="Background"></div>
+
+
+    <div class="gen-profile-title">
+        <h2><span class="text-primary">Passons en mode découverte sur Gen</span><span class="text-secondary">Flix</span></h2>
+        <p class="text-tertiary">Selectionnez vos séries préférées pour affirmer vos goûts.</p>
+    </div>
+    <div class="gen-profile-gemini">
+        <div class="gen-profile-gemini-title">
+            <img src="{{ url_for('static', filename='images/gemini-color.png') }}" alt="Google Gemini Logo" class="gemini-logo">
+            <h3 class="text-primary">Généré par Gemini</h3>
+        </div>
+        <p class="text-tertiary">5 séries ou plus sélectionnées seront envoyées à Gemini, notre IA avancée, pour qu’elle personnalise les genres de séries à recommander et à éviter, que vous pourrez ajuster ensuite.</p>
+
+    </div>
+    <div class="gen-profile-card">
+        <div class="gen-profile-card-title">
+            <p class="text-primary">Quelles séries avez-vous déjà vues ?</p>
+            <span class="text-tertiary">Sélectionnez au moins 5 séries pour que Gemini puisse affiner vos recommandations.</span>
+        </div>
+        <form
+            id="gen-profile-search-form"
+            class="gen-profile-search"
+            data-api-url="{{ url_for('api.search_series') }}"
+        >
+            <div class="gen-profile-search-field">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input
+                    id="gen-profile-search-input"
+                    type="search"
+                    name="q"
+                    placeholder="Rechercher une série par nom..."
+                    autocomplete="off"
+                >
+                <button type="submit">Rechercher</button>
+            </div>
+            <p id="gen-profile-search-message" class="gen-profile-search-message text-tertiary"></p>
+        </form>
+        <script id="gen-profile-initial-shows" type="application/json">{{ shows|tojson }}</script>
+        <div class="gen-profile-card-list-wrapper">
+            <div class="gen-profile-card-list-toolbar">
+                <p id="gen-profile-selection-count" class="gen-profile-selection-count text-tertiary">
+                    0 série sélectionnée
+                </p>
+                <button id="gen-profile-continue-button" class="gen-profile-continue-button" type="button">
+                    Continuer
+                </button>
+            </div>
+            <div
+                class="gen-profile-card-list"
+                data-fallback-image="{{ url_for('static', filename='images/logo.jpg') }}"
+            >
+                {% if shows %}
+                {% for show in shows %}
+                <div class="gen-profile-card-item" data-show-id="{{ show.id if show.id is not none else show.name }}">
+                    <img src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/logo.jpg') }}" alt="{{ show.name }}">
+                    <div class="name">{{ show.name }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="gen-profile-empty text-tertiary">Aucune série n'a pu être chargée pour le moment.</p>
+                {% endif %}
+            </div>
+            <p id="gen-profile-continue-message" class="gen-profile-continue-message text-tertiary"></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

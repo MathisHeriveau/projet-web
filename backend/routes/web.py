@@ -71,14 +71,14 @@ def recommendations():
     return redirect(url_for("web.index"))
 
 
-@web_bp.route("/genProfil")
+@web_bp.route("/gen_profil")
 def gen_profile():
     try:
         shows = get_all_series_from_tvmaze(limit=24)
     except Exception:
         shows = []
 
-    return render_template("genProfil.html", shows=shows)
+    return render_template("gen_profil.html", shows=shows)
 
 
 @web_bp.route("/register")

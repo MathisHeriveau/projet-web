@@ -8,7 +8,7 @@ from backend.enums.opinion_type import OpinionType
 from backend.extensions import db
 from backend.models import Opinion, User
 from backend.providers.gemini_provider import GeminiProvider
-from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze
+from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
 from backend.routes.wrapper import login_required
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -228,6 +228,34 @@ def get_all_series():
     return {
         "source": "tvmaze",
         "format": "raw" if raw else "structured",
+        "count": len(shows),
+        "items": shows,
+    }, HTTPStatus.OK.value
+
+
+@api_bp.route("/search_series")
+@login_required
+def search_series():
+    """
+    Fetch shows from TVMaze by name.
+    """
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return {
+            "source": "tvmaze",
+            "query": "",
+            "count": 0,
+            "items": [],
+        }, HTTPStatus.OK.value
+
+    try:
+        shows = search_series_from_tvmaze(query, limit=24)
+    except Exception as error:
+        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+
+    return {
+        "source": "tvmaze",
+        "query": query,
         "count": len(shows),
         "items": shows,
     }, HTTPStatus.OK.value

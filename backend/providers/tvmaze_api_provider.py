@@ -1,5 +1,6 @@
 import json
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote
 from urllib.request import urlopen
 
 TVMAZE_BASE_URL = "https://api.tvmaze.com"
@@ -25,22 +26,25 @@ def _serialize_show(show):
         "url": show.get("url"),
     }
 
+
+def _read_tvmaze_payload(url):
+    try:
+        with urlopen(url, timeout=TVMAZE_TIMEOUT_SECONDS) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        if error.code == 404:
+            return []
+        raise Exception(f"Erreur TVMaze: {error.code}") from error
+    except URLError as error:
+        raise Exception("Erreur TVMaze: service indisponible") from error
+
 def get_all_series_from_tvmaze(raw=False, limit=None):
     all_series = []
     page = 0
 
     while True:
         url = f"{TVMAZE_BASE_URL}/shows?page={page}"
-
-        try:
-            with urlopen(url, timeout=TVMAZE_TIMEOUT_SECONDS) as response:
-                series = json.loads(response.read().decode("utf-8"))
-        except HTTPError as error:
-            if error.code == 404:
-                break
-            raise Exception(f"Erreur TVMaze: {error.code}") from error
-        except URLError as error:
-            raise Exception("Erreur TVMaze: service indisponible") from error
+        series = _read_tvmaze_payload(url)
 
         if not series:
             break
@@ -56,3 +60,18 @@ def get_all_series_from_tvmaze(raw=False, limit=None):
         page += 1
 
     return all_series
+
+
+def search_series_from_tvmaze(query, limit=None):
+    normalized_query = (query or "").strip()
+    if not normalized_query:
+        return []
+
+    url = f"{TVMAZE_BASE_URL}/search/shows?q={quote(normalized_query)}"
+    results = _read_tvmaze_payload(url)
+    shows = [_serialize_show(entry.get("show") or {}) for entry in results if entry.get("show")]
+
+    if limit is not None:
+        return shows[:limit]
+
+    return shows
