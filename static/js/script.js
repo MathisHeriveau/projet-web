@@ -1,354 +1,61 @@
-const items = document.querySelectorAll(".carrousel-item");
-const prevButtons = document.querySelectorAll(".carrousel-control.prev");
-const nextButtons = document.querySelectorAll(".carrousel-control.next");
-const bullets = document.querySelectorAll(".bullet span");
-const authForm = document.querySelector("#auth-form");
-const authMessage = document.querySelector("#auth-message");
-const profileCardList = document.querySelector(".gen-profile-card-list");
-const profileSearchForm = document.querySelector("#gen-profile-search-form");
-const profileSearchInput = document.querySelector("#gen-profile-search-input");
-const profileSearchMessage = document.querySelector("#gen-profile-search-message");
-const initialShowsElement = document.querySelector("#gen-profile-initial-shows");
-const profileSelectionCount = document.querySelector("#gen-profile-selection-count");
-const profileContinueButton = document.querySelector("#gen-profile-continue-button");
-const profileContinueMessage = document.querySelector("#gen-profile-continue-message");
-
-let currentIndex = 0;
-const MIN_PROFILE_SELECTIONS = 5;
-const selectedProfileShows = new Set();
-const selectedProfileShowData = new Map();
-const fallbackProfileImage = profileCardList?.dataset.fallbackImage || "";
-let initialProfileShows = [];
-
-function updateCarousel() {
-  items.forEach((item, index) => {
-    item.classList.toggle("active", index === currentIndex);
-  });
-
-  bullets.forEach((bullet, index) => {
-    bullet.classList.toggle("active", index === currentIndex);
-  });
-}
-
-prevButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    currentIndex = (currentIndex - 1 + items.length) % items.length;
-    updateCarousel();
-  });
-});
-
-nextButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    currentIndex = (currentIndex + 1) % items.length;
-    updateCarousel();
-  });
-});
-
-function setupProfileCard(item) {
-  item.setAttribute("role", "button");
-  item.setAttribute("tabindex", "0");
-
-  if (!item.querySelector(".gen-profile-card-icon")) {
-    const icon = document.createElement("i");
-    icon.className = "bi bi-check-circle-fill gen-profile-card-icon";
-    icon.setAttribute("aria-hidden", "true");
-    item.appendChild(icon);
-  }
-
-  const syncSelectionState = () => {
-    const showId = item.dataset.showId || "";
-    const isSelected = selectedProfileShows.has(showId);
-    item.classList.toggle("selected", isSelected);
-    item.setAttribute("aria-pressed", String(isSelected));
-  };
-
-  const toggleSelection = () => {
-    const showId = item.dataset.showId || "";
-    if (!showId) {
-      return;
-    }
-
-    if (selectedProfileShows.has(showId)) {
-      selectedProfileShows.delete(showId);
-      selectedProfileShowData.delete(showId);
-    } else {
-      selectedProfileShows.add(showId);
-      const show = getProfileShowFromItem(item);
-      if (show) {
-        selectedProfileShowData.set(showId, show);
-      }
-    }
-
-    syncSelectionState();
-    reorderProfileCards();
-    updateContinueState();
-  };
-
-  item.addEventListener("click", toggleSelection);
-  item.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-
-    event.preventDefault();
-    toggleSelection();
-  });
-  syncSelectionState();
-}
-
-function reorderProfileCards() {
-  if (!profileCardList) {
+/*
+|--------------------------------------------------------------------------
+| ACCUEIL
+|--------------------------------------------------------------------------
+| Gère le carousel visible sur la page d'accueil.
+*/
+function initCarousel() {
+  const items = document.querySelectorAll(".carrousel-item");
+  if (!items.length) {
     return;
   }
 
-  const cards = Array.from(profileCardList.querySelectorAll(".gen-profile-card-item"));
-  cards
-    .sort((firstCard, secondCard) => {
-      const firstSelected = firstCard.classList.contains("selected") ? 0 : 1;
-      const secondSelected = secondCard.classList.contains("selected") ? 0 : 1;
+  const prevButtons = document.querySelectorAll(".carrousel-control.prev");
+  const nextButtons = document.querySelectorAll(".carrousel-control.next");
+  const bullets = document.querySelectorAll(".bullet span");
+  let currentIndex = 0;
 
-      if (firstSelected !== secondSelected) {
-        return firstSelected - secondSelected;
-      }
-
-      return Number(firstCard.dataset.renderOrder || 0) - Number(secondCard.dataset.renderOrder || 0);
-    })
-    .forEach((card) => {
-      profileCardList.appendChild(card);
+  function renderCarousel() {
+    items.forEach((item, index) => {
+      item.classList.toggle("active", index === currentIndex);
     });
+
+    bullets.forEach((bullet, index) => {
+      bullet.classList.toggle("active", index === currentIndex);
+    });
+  }
+
+  prevButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      renderCarousel();
+    });
+  });
+
+  nextButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentIndex = (currentIndex + 1) % items.length;
+      renderCarousel();
+    });
+  });
+
+  renderCarousel();
 }
 
-function updateContinueState() {
-  const selectedCount = selectedProfileShows.size;
-  const remainingCount = Math.max(MIN_PROFILE_SELECTIONS - selectedCount, 0);
+/*
+|--------------------------------------------------------------------------
+| AUTHENTIFICATION
+|--------------------------------------------------------------------------
+| Gère l'envoi AJAX des formulaires de connexion / inscription.
+*/
+function initAuthForm() {
+  const authForm = document.querySelector("#auth-form");
+  const authMessage = document.querySelector("#auth-message");
 
-  if (profileSelectionCount) {
-    profileSelectionCount.textContent = `${selectedCount} série(s) sélectionnée(s)`;
-  }
-
-  if (profileContinueButton) {
-    profileContinueButton.classList.toggle("ready", selectedCount >= MIN_PROFILE_SELECTIONS);
-  }
-
-  if (!profileContinueMessage) {
+  if (!authForm || !authMessage) {
     return;
   }
 
-  if (selectedCount === 0) {
-    profileContinueMessage.textContent = "";
-    profileContinueMessage.className = "gen-profile-continue-message text-tertiary";
-    return;
-  }
-
-  if (selectedCount >= MIN_PROFILE_SELECTIONS) {
-    profileContinueMessage.textContent = "Parfait, vous pouvez continuer.";
-    profileContinueMessage.className = "gen-profile-continue-message success";
-    return;
-  }
-
-  profileContinueMessage.textContent = `Encore ${remainingCount} série(s) à sélectionner minimum.`;
-  profileContinueMessage.className = "gen-profile-continue-message error";
-}
-
-function getShowId(show) {
-  return String(show?.id ?? show?.name ?? "");
-}
-
-function getShowImage(show) {
-  return show?.image?.medium || fallbackProfileImage;
-}
-
-function normalizeProfileShow(show) {
-  const showId = getShowId(show);
-  if (!showId) {
-    return null;
-  }
-
-  const image = getShowImage(show);
-
-  return {
-    id: show?.id ?? showId,
-    name: show?.name || "Serie sans nom",
-    image: image ? { medium: image } : null,
-  };
-}
-
-function getProfileShowFromItem(item) {
-  return normalizeProfileShow({
-    id: item.dataset.showId || "",
-    name: item.dataset.showName || "Serie sans nom",
-    image: item.dataset.showImage ? { medium: item.dataset.showImage } : null,
-  });
-}
-
-function getMergedProfileShows(shows) {
-  const mergedShows = [];
-  const mergedShowIds = new Set();
-
-  selectedProfileShowData.forEach((show) => {
-    const normalizedShow = normalizeProfileShow(show);
-    if (!normalizedShow) {
-      return;
-    }
-
-    mergedShows.push(normalizedShow);
-    mergedShowIds.add(getShowId(normalizedShow));
-  });
-
-  shows.forEach((show) => {
-    const normalizedShow = normalizeProfileShow(show);
-    if (!normalizedShow) {
-      return;
-    }
-
-    const showId = getShowId(normalizedShow);
-    if (mergedShowIds.has(showId)) {
-      return;
-    }
-
-    mergedShows.push(normalizedShow);
-    mergedShowIds.add(showId);
-  });
-
-  return mergedShows;
-}
-
-function createProfileCard(show, index) {
-  const item = document.createElement("div");
-  item.className = "gen-profile-card-item";
-  item.dataset.showId = getShowId(show);
-  item.dataset.showName = show?.name || "Serie sans nom";
-  item.dataset.showImage = getShowImage(show);
-  item.dataset.renderOrder = String(index);
-
-  const image = document.createElement("img");
-  image.src = getShowImage(show);
-  image.alt = show?.name || "Serie";
-
-  const name = document.createElement("div");
-  name.className = "name";
-  name.textContent = show?.name || "Serie sans nom";
-
-  item.appendChild(image);
-  item.appendChild(name);
-  setupProfileCard(item);
-  return item;
-}
-
-function renderProfileCards(shows, emptyMessage = "Aucune serie n'a pu etre chargee pour le moment.") {
-  if (!profileCardList) {
-    return;
-  }
-
-  const mergedShows = getMergedProfileShows(shows);
-  profileCardList.innerHTML = "";
-
-  if (!mergedShows.length) {
-    const emptyState = document.createElement("p");
-    emptyState.className = "gen-profile-empty text-tertiary";
-    emptyState.textContent = emptyMessage;
-    profileCardList.appendChild(emptyState);
-    return;
-  }
-
-  mergedShows.forEach((show, index) => {
-    profileCardList.appendChild(createProfileCard(show, index));
-  });
-
-  reorderProfileCards();
-  updateContinueState();
-}
-
-updateCarousel();
-
-if (initialShowsElement && profileCardList) {
-  try {
-    initialProfileShows = JSON.parse(initialShowsElement.textContent || "[]");
-  } catch (_error) {
-    initialProfileShows = [];
-  }
-
-  renderProfileCards(initialProfileShows);
-}
-
-if (profileContinueButton) {
-  profileContinueButton.addEventListener("click", () => {
-    const selectedCount = selectedProfileShows.size;
-
-    if (!profileContinueMessage) {
-      return;
-    }
-
-    if (selectedCount < MIN_PROFILE_SELECTIONS) {
-      profileContinueMessage.textContent = `Il faut sélectionner au moins ${MIN_PROFILE_SELECTIONS} séries avant de continuer.`;
-      profileContinueMessage.className = "gen-profile-continue-message error";
-      return;
-    }
-
-    profileContinueMessage.textContent = "Parfait, vous pouvez continuer.";
-    profileContinueMessage.className = "gen-profile-continue-message success";
-  });
-}
-
-if (profileSearchForm && profileSearchInput && profileCardList) {
-  profileSearchForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const query = profileSearchInput.value.trim();
-    if (!query) {
-      renderProfileCards(initialProfileShows);
-      if (profileSearchMessage) {
-        profileSearchMessage.textContent = "";
-      }
-      return;
-    }
-
-    if (profileSearchMessage) {
-      profileSearchMessage.textContent = "Recherche en cours...";
-    }
-
-    try {
-      const response = await fetch(
-        `${profileSearchForm.dataset.apiUrl}?q=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (profileSearchMessage) {
-          profileSearchMessage.textContent = data.error || "Erreur de recherche.";
-        }
-        return;
-      }
-
-      renderProfileCards(
-        data.items || [],
-        "Aucune serie ne correspond a votre recherche."
-      );
-
-      if (profileSearchMessage) {
-        profileSearchMessage.textContent =
-          data.count > 0 ? `${data.count} serie(s) trouvee(s).` : "Aucun resultat.";
-      }
-    } catch (_error) {
-      if (profileSearchMessage) {
-        profileSearchMessage.textContent = "Erreur reseau.";
-      }
-    }
-  });
-
-  profileSearchInput.addEventListener("input", () => {
-    if (profileSearchInput.value.trim()) {
-      return;
-    }
-
-    renderProfileCards(initialProfileShows);
-    if (profileSearchMessage) {
-      profileSearchMessage.textContent = "";
-    }
-  });
-}
-
-if (authForm) {
   authForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -382,3 +89,295 @@ if (authForm) {
     }
   });
 }
+
+/*
+|--------------------------------------------------------------------------
+| GENERATION DU PROFIL
+|--------------------------------------------------------------------------
+| Gère la page de première connexion :
+| - affichage des séries
+| - sélection / désélection
+| - recherche TVMaze
+| - remontée des séries sélectionnées en premier
+*/
+function initGenProfile() {
+  const list = document.querySelector(".gen-profile-card-list");
+  if (!list) {
+    return;
+  }
+
+  const searchForm = document.querySelector("#gen-profile-search-form");
+  const searchInput = document.querySelector("#gen-profile-search-input");
+  const selectionCount = document.querySelector("#gen-profile-selection-count");
+  const profileContinueButton = document.querySelector("#gen-profile-continue-button");
+  const initialShowsScript = document.querySelector("#gen-profile-initial-shows");
+  const fallbackImage =  "/static/images/no-image-blog.jpg";
+
+  const selectedShows = new Map();
+  let initialShows = [];
+
+  /*
+  |--------------------------------------------------------------------------
+  | DONNEES DE BASE
+  |--------------------------------------------------------------------------
+  | On recharge les séries envoyées par Flask au premier affichage.
+  */
+  if (initialShowsScript) {
+    try {
+      initialShows = JSON.parse(initialShowsScript.textContent || "[]");
+    } catch (_error) {
+      initialShows = [];
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | PETITS HELPERS
+  |--------------------------------------------------------------------------
+  | Fonctions utilitaires pour normaliser les données et mettre à jour
+  | l'interface sans répéter du code partout.
+  */
+  function getShowId(show) {
+    return String(show?.id ?? show?.name ?? "");
+  }
+
+  function getShowImage(show) {
+    return show?.image?.medium || fallbackImage;
+  }
+
+  function normalizeShow(show) {
+    const id = getShowId(show);
+    if (!id) {
+      return null;
+    }
+
+    const image = getShowImage(show);
+
+    return {
+      id,
+      name: show?.name || "Serie sans nom",
+      image: image ? { medium: image } : null,
+    };
+  }
+
+  function updateSelectionCount() {
+    if (selectionCount) {
+      selectionCount.textContent = `${selectedShows.size} série(s) sélectionnée(s)`;
+    }
+
+    if (profileContinueButton) {
+      profileContinueButton.classList.toggle("ready", selectedShows.size >= 5);
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | TRI ET FUSION DES CARTES
+  |--------------------------------------------------------------------------
+  | Les séries sélectionnées restent visibles et remontent en haut,
+  | même après une recherche puis un retour à la liste de base.
+  */
+  function sortCards() {
+    const cards = Array.from(list.querySelectorAll(".gen-profile-card-item"));
+
+    cards
+      .sort((firstCard, secondCard) => {
+        const firstSelected = firstCard.classList.contains("selected") ? 0 : 1;
+        const secondSelected = secondCard.classList.contains("selected") ? 0 : 1;
+
+        if (firstSelected !== secondSelected) {
+          return firstSelected - secondSelected;
+        }
+
+        return (
+          Number(firstCard.dataset.renderOrder || 0) -
+          Number(secondCard.dataset.renderOrder || 0)
+        );
+      })
+      .forEach((card) => {
+        list.appendChild(card);
+      });
+  }
+
+  function mergeShows(shows) {
+    const merged = [];
+    const seen = new Set();
+
+    selectedShows.forEach((show) => {
+      merged.push(show);
+      seen.add(show.id);
+    });
+
+    shows.forEach((show) => {
+      const normalizedShow = normalizeShow(show);
+      if (!normalizedShow || seen.has(normalizedShow.id)) {
+        return;
+      }
+
+      merged.push(normalizedShow);
+      seen.add(normalizedShow.id);
+    });
+
+    return merged;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREATION ET RENDU DES CARTES
+  |--------------------------------------------------------------------------
+  | Création d'une carte de série, gestion du clic, puis rendu complet
+  | de la grille à partir de la liste courante.
+  */
+  function createCard(show, order) {
+    const card = document.createElement("div");
+    const image = document.createElement("img");
+    const name = document.createElement("div");
+    const icon = document.createElement("i");
+
+    card.className = "gen-profile-card-item";
+    card.dataset.showId = show.id;
+    card.dataset.renderOrder = String(order);
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+
+    image.src = getShowImage(show);
+    image.alt = show.name;
+
+    name.className = "name";
+    name.textContent = show.name;
+
+    icon.className = "bi bi-check-circle-fill gen-profile-card-icon";
+    icon.setAttribute("aria-hidden", "true");
+
+    card.appendChild(image);
+    card.appendChild(name);
+    card.appendChild(icon);
+
+    function syncCardState() {
+      const isSelected = selectedShows.has(show.id);
+      card.classList.toggle("selected", isSelected);
+      card.setAttribute("aria-pressed", String(isSelected));
+    }
+
+    function toggleCard() {
+      if (selectedShows.has(show.id)) {
+        selectedShows.delete(show.id);
+      } else {
+        selectedShows.set(show.id, show);
+      }
+
+      syncCardState();
+      sortCards();
+      updateSelectionCount();
+    }
+
+    card.addEventListener("click", toggleCard);
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      toggleCard();
+    });
+
+    syncCardState();
+    return card;
+  }
+
+  function renderShows(shows, emptyMessage = "Aucune serie n'a pu etre chargee pour le moment.") {
+    const mergedShows = mergeShows(shows);
+    list.innerHTML = "";
+
+    if (!mergedShows.length) {
+      const emptyState = document.createElement("p");
+      emptyState.className = "gen-profile-empty text-tertiary";
+      emptyState.textContent = emptyMessage;
+      list.appendChild(emptyState);
+      updateSelectionCount();
+      return;
+    }
+
+    mergedShows.forEach((show, index) => {
+      list.appendChild(createCard(show, index));
+    });
+
+    sortCards();
+    updateSelectionCount();
+  }
+
+  renderShows(initialShows);
+
+  /*
+  |--------------------------------------------------------------------------
+  | RECHERCHE
+  |--------------------------------------------------------------------------
+  | Appelle l'API backend qui interroge TVMaze avec le nom saisi.
+  */
+  if (!searchForm || !searchInput) {
+    return;
+  }
+
+  searchForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const query = searchInput.value.trim();
+    if (!query) {
+      renderShows(initialShows);
+      if (searchMessage) {
+        searchMessage.textContent = "";
+      }
+      return;
+    }
+
+    if (searchMessage) {
+      searchMessage.textContent = "Recherche en cours...";
+    }
+
+    try {
+      const response = await fetch(
+        `${searchForm.dataset.apiUrl}?q=${encodeURIComponent(query)}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (searchMessage) {
+          searchMessage.textContent = data.error || "Erreur de recherche.";
+        }
+        return;
+      }
+
+      renderShows(data.items || [], "Aucune serie ne correspond a votre recherche.");
+
+      if (searchMessage) {
+        searchMessage.textContent =
+          data.count > 0 ? `${data.count} serie(s) trouvee(s).` : "Aucun resultat.";
+      }
+    } catch (_error) {
+      if (searchMessage) {
+        searchMessage.textContent = "Erreur reseau.";
+      }
+    }
+  });
+
+  searchInput.addEventListener("input", () => {
+    if (searchInput.value.trim()) {
+      return;
+    }
+
+    renderShows(initialShows);
+    if (searchMessage) {
+      searchMessage.textContent = "";
+    }
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| INITIALISATION GLOBALE
+|--------------------------------------------------------------------------
+| Chaque bloc s'active seulement si les éléments de la page existent.
+*/
+initCarousel();
+initAuthForm();
+initGenProfile();
