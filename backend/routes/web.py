@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from flask import Blueprint, redirect, render_template, session, url_for
+from flask import Blueprint, g, redirect, render_template, request, session, url_for
+
+from backend.models import User
+from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze
 
 web_bp = Blueprint("web", __name__)
+AUTH_ENDPOINTS = {"web.login", "web.register"}
+FIRST_CONNECTION_ALLOWED_ENDPOINTS = AUTH_ENDPOINTS | {"web.gen_profile", "web.logout"}
 
 
 def _home_context() -> dict[str, list]:
@@ -14,7 +19,38 @@ def _home_context() -> dict[str, list]:
 
 
 def _current_username() -> str | None:
-    return session.get("username") or session.get("user")
+    return session.get("user")
+
+
+@web_bp.before_request
+def _guard_first_connection():
+    endpoint = request.endpoint
+    g.user = None
+    if endpoint is None:
+        return None
+
+    username = _current_username()
+    if username is None:
+        if endpoint in AUTH_ENDPOINTS:
+            return None
+        return redirect(url_for("web.login"))
+
+    user = User.get_by_username(username)
+    if user is None:
+        session.clear()
+        if endpoint in AUTH_ENDPOINTS:
+            return None
+        return redirect(url_for("web.login"))
+
+    g.user = user
+
+    if user.first_connection and endpoint not in FIRST_CONNECTION_ALLOWED_ENDPOINTS:
+        return redirect(url_for("web.gen_profile"))
+
+    if not user.first_connection and endpoint == "web.gen_profile":
+        return redirect(url_for("web.index"))
+
+    return None
 
 
 @web_bp.route("/", endpoint="index")
@@ -33,6 +69,16 @@ def series():
 @web_bp.route("/recommendations")
 def recommendations():
     return redirect(url_for("web.index"))
+
+
+@web_bp.route("/genProfil")
+def gen_profile():
+    try:
+        shows = get_all_series_from_tvmaze(limit=24)
+    except Exception:
+        shows = []
+
+    return render_template("genProfil.html", shows=shows)
 
 
 @web_bp.route("/register")

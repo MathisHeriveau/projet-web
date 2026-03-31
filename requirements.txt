@@ -3,3 +3,5 @@ barcodenumber
 flask_sqlalchemy
 flask_session
 hashlib
+google-genai
+python-dotenv
