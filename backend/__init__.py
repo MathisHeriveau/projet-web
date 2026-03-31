@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from stat import S_IWUSR
 
 from flask import Flask, render_template
 from .extensions import db, sess
@@ -8,6 +9,15 @@ from .routes.api import api_bp
 from .routes.web import web_bp
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+INSTANCE_DIR = BASE_DIR / "instance"
+DB_PATH = INSTANCE_DIR / "GenFlixBD.db"
+
+
+def _prepare_instance_storage() -> None:
+    INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if DB_PATH.exists():
+        DB_PATH.chmod(DB_PATH.stat().st_mode | S_IWUSR)
 
 
 def create_app() -> Flask:
@@ -18,7 +28,9 @@ def create_app() -> Flask:
     )
 
     app.config["SECRET_KEY"] = "dev-secret"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///GenFlixBD.db"
+    _prepare_instance_storage()
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     app.config["SESSION_TYPE"] = "sqlalchemy"
