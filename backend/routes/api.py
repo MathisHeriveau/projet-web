@@ -7,7 +7,7 @@ from backend.enums.http_status import HTTPStatus
 from backend.enums.opinion_type import OpinionType
 from backend.extensions import db
 from backend.models import Opinion, User
-from backend.providers.gemini import GeminiProvider
+from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze
 from backend.routes.wrapper import login_required
 
