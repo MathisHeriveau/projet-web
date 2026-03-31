@@ -44,7 +44,6 @@
                 >
                 <button type="submit">Rechercher</button>
             </div>
-            <p id="gen-profile-search-message" class="gen-profile-search-message text-tertiary"></p>
         </form>
         <script id="gen-profile-initial-shows" type="application/json">{{ shows|tojson }}</script>
         <div class="gen-profile-card-list-wrapper">
@@ -58,12 +57,12 @@
             </div>
             <div
                 class="gen-profile-card-list"
-                data-fallback-image="{{ url_for('static', filename='images/logo.jpg') }}"
+                data-fallback-image="{{ url_for('static', filename='images/no-image-blog.jpg') }}"
             >
                 {% if shows %}
                 {% for show in shows %}
                 <div class="gen-profile-card-item" data-show-id="{{ show.id if show.id is not none else show.name }}">
-                    <img src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/logo.jpg') }}" alt="{{ show.name }}">
+                    <img src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg') }}" alt="{{ show.name }}">
                     <div class="name">{{ show.name }}</div>
                 </div>
                 {% endfor %}
