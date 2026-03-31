@@ -31,3 +31,7 @@ class Opinion(db.Model):
     @classmethod
     def get_by_user_id(cls, user_id):
         return cls.query.filter_by(user_id=user_id).all()
+    
+    @classmethod
+    def get_viewed_by_user_id(cls, user_id):
+        return cls.query.filter_by(user_id=user_id, viewed=True).all()
