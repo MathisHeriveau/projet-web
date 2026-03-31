@@ -111,7 +111,7 @@ function initGenProfile() {
   const selectionCount = document.querySelector("#gen-profile-selection-count");
   const profileContinueButton = document.querySelector("#gen-profile-continue-button");
   const initialShowsScript = document.querySelector("#gen-profile-initial-shows");
-  const fallbackImage =  "/static/images/no-image-blog.jpg";
+  const fallbackImage = list.dataset.fallbackImage || "/static/images/no-image-blog.jpg";
 
   const selectedShows = new Map();
   let initialShows = [];
@@ -272,31 +272,13 @@ function initGenProfile() {
     }
 
     card.addEventListener("click", toggleCard);
-    card.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-
-      event.preventDefault();
-      toggleCard();
-    });
-
     syncCardState();
     return card;
   }
 
-  function renderShows(shows, emptyMessage = "Aucune serie n'a pu etre chargee pour le moment.") {
+  function renderShows(shows) {
     const mergedShows = mergeShows(shows);
     list.innerHTML = "";
-
-    if (!mergedShows.length) {
-      const emptyState = document.createElement("p");
-      emptyState.className = "gen-profile-empty text-tertiary";
-      emptyState.textContent = emptyMessage;
-      list.appendChild(emptyState);
-      updateSelectionCount();
-      return;
-    }
 
     mergedShows.forEach((show, index) => {
       list.appendChild(createCard(show, index));
@@ -314,24 +296,13 @@ function initGenProfile() {
   |--------------------------------------------------------------------------
   | Appelle l'API backend qui interroge TVMaze avec le nom saisi.
   */
-  if (!searchForm || !searchInput) {
-    return;
-  }
-
   searchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const query = searchInput.value.trim();
     if (!query) {
       renderShows(initialShows);
-      if (searchMessage) {
-        searchMessage.textContent = "";
-      }
       return;
-    }
-
-    if (searchMessage) {
-      searchMessage.textContent = "Recherche en cours...";
     }
 
     try {
@@ -341,22 +312,12 @@ function initGenProfile() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (searchMessage) {
-          searchMessage.textContent = data.error || "Erreur de recherche.";
-        }
         return;
       }
 
-      renderShows(data.items || [], "Aucune serie ne correspond a votre recherche.");
+      renderShows(data.items || []);
 
-      if (searchMessage) {
-        searchMessage.textContent =
-          data.count > 0 ? `${data.count} serie(s) trouvee(s).` : "Aucun resultat.";
-      }
     } catch (_error) {
-      if (searchMessage) {
-        searchMessage.textContent = "Erreur reseau.";
-      }
     }
   });
 
@@ -366,9 +327,6 @@ function initGenProfile() {
     }
 
     renderShows(initialShows);
-    if (searchMessage) {
-      searchMessage.textContent = "";
-    }
   });
 }
 
