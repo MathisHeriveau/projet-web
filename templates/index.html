@@ -1,12 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}Projet Web{% endblock %}
+{% block title %}Accueil{% endblock %}
 
 {% block content %}
-<main>
-    <h1>Projet web</h1>
-    <p>Base Flask tres simple pour commencer.</p>
-    <p>Base de donnees : {{ db_name }}</p>
-    <p><a href="/api/example">Voir l'exemple API</a></p>
-</main>
+<div class="app">
+    <section class="home">
+        <div class="left-home">
+            <h1 class="text-primary">Trouvez votre </h1>
+            <h1 class="text-secondary">prochaine série.</h1>
+            <p>Obtenez des recommandations personnalisées basées sur ce que vous avez vu ou aimé.</p>
+        </div>
+        <div class="right-home">
+            <div class="carrousel">
+                {% for show in featured_shows %}
+                <div class="carrousel-item {% if loop.first %}active{% endif %}">
+                    <img src="{{ show.image }}" alt="{{ show.name }}">
+                    <i class="bi bi-chevron-left carrousel-control prev" aria-label="Précédent"></i>
+                    <i class="bi bi-chevron-right carrousel-control next" aria-label="Suivant"></i>
+                    <div class="carrousel-item-title">
+                        <span class="text-primary">{{ show.subtitle }}</span>
+                        <span class="text-secondary">{{ show.name }}</span>
+                    </div>
+                    <div class="info">
+                        <div class="year">{{ show.year }}</div>
+                        <div class="category">{{ show.genres }}</div>
+                        <div class="nb-saison">{{ show.meta }}</div>
+                    </div>
+
+                    <button class="play-button" aria-label="Lire la série">
+                        <i class="bi bi-play-fill" aria-hidden="true"></i>
+                    </button>
+                </div>
+                {% endfor %}
+                <div class="bullet">
+                    {% for show in featured_shows %}
+                    <span class="{% if loop.first %}active{% endif %}" aria-label="{{ show.name }}"></span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="last-view">
+        <div class="last-view-layout">
+            <div class="last-view-column">
+                <div class="title">Series que vous avez vues</div>
+                <div class="last-view-container">
+                    {% for show in last_view_shows %}
+                    <div class="last-view-item">
+                        <img src="{{ show.image }}" alt="{{ show.name }}">
+                        <div class="name">{{ show.name }}</div>
+                        <div class="{{ show.reaction }}">
+                            <i class="bi {{ show.reaction_icon }}" aria-label="{{ show.reaction_label }}"></i>
+                            <span>{{ show.reaction_label }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="last-note">
+                <div class="title">Vos dernières notes</div>
+                <div class="last-note-container">
+                    {% for show in last_note_shows %}
+                    <div class="last-note-item">
+                        <img src="{{ show.image }}" alt="{{ show.name }}">
+                        <div class="name">{{ show.name }}</div>
+                        <div class="timeline">{{ show.timeline }}</div>
+                        <div class="{{ show.reaction }}">
+                            <i class="bi {{ show.reaction_icon }}" aria-label="{{ show.reaction_label }}"></i>
+                            <span>{{ show.reaction_label }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}

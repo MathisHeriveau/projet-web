@@ -3,10 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Projet Web{% endblock %}</title>
+    <title>{% block title %}GenFlix{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <header>
+        <div class="app-name"><span class="text-primary">Gen</span><span class="text-secondary">Flix</span></div>
+        <nav>
+            <a href="{{ url_for('web.index') }}">Accueil</a>
+            <a href="{{ url_for('web.series') }}">Mes séries</a>
+            <a href="{{ url_for('web.recommendations') }}">Recommandations</a>
+            <div class="search-bar">
+                <button type="button" aria-label="Rechercher">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                </button>
+                <input type="text" placeholder="Rechercher une série...">
+            </div>
+            {% if session.get('username') %}
+            <div class="profil">
+                <button>👤</button>
+                <div class="dropdown">
+                    <a href="#">Mon Profil</a>
+                    <a href="{{ url_for('web.logout') }}">Déconnexion</a>
+                </div>
+            </div>
+            {% else %}
+                <a href="{{ url_for('web.login') }}">Connexion</a>
+                <a href="{{ url_for('web.register') }}">Inscription</a>
+            {% endif %}
+        </nav>
+    </header>
     {% block content %}{% endblock %}
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
