@@ -1,4 +1,5 @@
 from backend.extensions import db
+from backend.enums.opinion_type import OpinionType
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -24,9 +25,7 @@ class Opinion(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     serie_name = db.Column(db.String(255), nullable=False)
-    liked = db.Column(db.Boolean, nullable=False)
-    disliked = db.Column(db.Boolean, nullable=False)
-    neutral = db.Column(db.Boolean, nullable=False)
+    opinion = db.Column(db.Enum(OpinionType), nullable=False)
     viewed = db.Column(db.Boolean, nullable=False)
 
     @classmethod
