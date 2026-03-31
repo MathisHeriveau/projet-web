@@ -19,7 +19,7 @@ def login():
 
     user = User.get_by_username(u)
     if user is None or not check_password_hash(user.password_hash, p):
-        return {"error": "invalid credentials"}, HTTPStatus.UNAUTHORIZED.value
+        return {"error": "invalid credentials", "redirect": "/"}, HTTPStatus.UNAUTHORIZED.value
 
     session["user"] = u
     return {"success": "logged in"}, HTTPStatus.OK.value
@@ -36,13 +36,16 @@ def register():
     user = User.get_by_username(u)
 
     if user is not None:
-        return {"error": "username already taken"}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "username already taken", "redirect": "/"}, HTTPStatus.BAD_REQUEST.value
 
-    user = User(username=u, password_hash=generate_password_hash(p))
+    user = User(
+        username=u,
+        password_hash=generate_password_hash(p, method="pbkdf2:sha256"),
+    )
     session["user"] = u
     db.session.add(user)
     db.session.commit()
-    return {"success": "account created"}, HTTPStatus.CREATED.value
+    return {"success": "account created", "redirect": "/"}, HTTPStatus.CREATED.value
 
 @api_bp.route("/logout")
 @login_required
@@ -51,7 +54,7 @@ def logout():
     Logout
     """
     session.clear()
-    return {"success": "logged out"}, HTTPStatus.OK.value
+    return {"success": "logged out", "redirect": "/login"}, HTTPStatus.OK.value
 
 @api_bp.route("/recommendation")
 @login_required

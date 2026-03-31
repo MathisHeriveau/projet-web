@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+    <div class="auth-title">
+        <h2><span class="text-primary">Bon retour sur Gen</span><span class="text-secondary">Flix</span></h2>
+        <p class="text-tertiary">Connectez-vous pour retrouver vos séries vues, vos notes et vos recommandations.</p>
+    </div>
+    <div class="auth-card">
+        <div class="auth-title">Connexion</div>
+
+        <form
+            id="auth-form"
+            class="auth-form"
+            data-api-url="{{ url_for('api.login') }}"
+            data-redirect-url="{{ url_for('web.index') }}"
+        >
+            <label for="username">Nom d'utilisateur</label>
+            <div class="auth-input">
+                <i class="bi bi-person-fill" aria-hidden="true"></i>
+                <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+            </div>
+            <label for="password">Mot de passe</label>
+            <div class="auth-input">
+                <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                <input type="password" name="password" placeholder="Mot de passe" required>
+            </div>
+            <p id="auth-message" class="auth-message text-secondary"></p>
+
+            <button type="submit">Se connecter</button>
+            <p class="text-primary">Pas de compte ? <a href="{{ url_for('web.register') }}">Inscrivez-vous</a></p>
+        </form>
+
+    </div>
+</section>
+{% endblock %}
