@@ -1,16 +1,34 @@
-from .extensions import db
+from backend.extensions import db
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     recommendation_text = db.Column(db.String(255), nullable=True)
-    liked_films = db.Column(db.String(255), nullable=True)
-    unliked_films = db.Column(db.String(255), nullable=True)
-    neutral_films = db.Column(db.String(255), nullable=True)
-    viewed_films = db.Column(db.String(255), nullable=True)
+    first_connection = db.Column(db.Boolean, default=True)
 
     @classmethod
     def get_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
-    
+
+class Recommendation(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    serie_name = db.Column(db.String(255), nullable=False)
+
+    @classmethod
+    def get_by_user_id(cls, user_id):
+        return cls.query.filter_by(user_id=user_id).all()
+
+class Opinion(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    serie_name = db.Column(db.String(255), nullable=False)
+    liked = db.Column(db.Boolean, nullable=False)
+    disliked = db.Column(db.Boolean, nullable=False)
+    neutral = db.Column(db.Boolean, nullable=False)
+    viewed = db.Column(db.Boolean, nullable=False)
+
+    @classmethod
+    def get_by_user_id(cls, user_id):
+        return cls.query.filter_by(user_id=user_id).all()
