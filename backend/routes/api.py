@@ -6,17 +6,15 @@ from backend.models import Opinion
 from backend.extensions import db
 from backend.routes.wrapper import login_required
 from backend.models import User
+from backend.providers.gemini import GeminiProvider
 
 from flask import Blueprint, request, session, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from google import genai
 from google.genai import types
 
-from dotenv import load_dotenv
-import os
-
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+gemini_provider = GeminiProvider()
 
 @api_bp.route("/login", methods=["POST"])
 def login():
@@ -103,36 +101,47 @@ def test():
     return {"opinions": opinions_data}, HTTPStatus.OK.value
 
 
-series_recommendation_schema = {
-    "type": "object",
-    "properties": {
-        "series_list": {
-            "type": "array",
-            "description": "A list of exactly 10 different TV series recommendations.",
-            "minItems": 10,
-            "maxItems": 10,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "description": "The title of the series."
-                    },
-                    "genre": {
-                        "type": "string",
-                        "description": "The primary genre of the series."
-                    },
-                    "pitch": {
-                        "type": "string",
-                        "description": "A short, engaging 1-sentence pitch for why the user should watch it."
-                    }
-                },
-                "required": ["title", "genre", "pitch"]
-            }
-        }
-    },
-    "required": ["series_list"]
-}
+@api_bp.route("/recommendation/text", methods=["GET"])
+@login_required
+def recommendation_text():
+    """
+    Generate a recommendation text from Gemini based on the user's liked and disliked series
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+
+    user_opinions = Opinion.get_by_user_id(user.id)
+    liked_list = [op.serie_name for op in user_opinions if op.opinion == OpinionType.LIKED]
+    liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
+
+    profile_context = f"""
+    You are an expert TV show recommender. 
+    Here is the user's profile data:
+    - Series they love: {liked_str}
+
+    Rules:
+    1. Try to match the vibe of their 'love' list.
+    2. Be as much precise as possible in your answer, do not be vague.
+    3. Return a text written in a natural, engaging style, in first person like if the user was describing their own taste, and in french.
+    """
+
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        temperature=0.7,
+        system_instruction=profile_context
+    )
+
+    response = gemini_provider.client.models.generate_content(
+        model=gemini_provider.model_id,
+        contents="Based on my input data can you generate a text that describes my taste in series please?",
+        config=config
+    )
+
+    return {"success": response.text}, HTTPStatus.OK.value
+
 
 @api_bp.route("/recommendation", methods=["GET"])
 @login_required
@@ -140,11 +149,6 @@ def recommendation():
     """
     Recommendation from Gemini
     """
-    load_dotenv()
-    GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-    model_id = "gemini-2.5-flash-lite"
-    client=genai.Client(api_key=GEMINI_KEY)
-
     current_username = session.get("user")
     user = User.get_by_username(current_username)
 
@@ -173,13 +177,13 @@ def recommendation():
 
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
-        response_schema=series_recommendation_schema,
+        response_schema=gemini_provider.series_recommendation_schema,
         temperature=0.7,
         system_instruction=profile_context
     )
 
-    response = client.models.generate_content(
-        model=model_id,
+    response = gemini_provider.client.models.generate_content(
+        model=gemini_provider.model_id,
         contents="Based on my input data can you recommend me 10 series please?",
         config=config
     )
