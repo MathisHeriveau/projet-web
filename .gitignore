@@ -1,4 +1,33 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenvs
 .venv/
-*.pyc
+venv/
+env/
+
+# Local env files
 .env
+.env.*
+!.env.template
+
+# Flask / local app data
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
