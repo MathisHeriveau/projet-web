@@ -1,2 +1,5 @@
 Flask
 barcodenumber
+flask_sqlalchemy
+flask_session
+hashlib
