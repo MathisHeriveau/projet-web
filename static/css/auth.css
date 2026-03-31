@@ -6,6 +6,19 @@
   padding: var(--page-padding);
   flex-direction: column;
 }
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.auth-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(3px) brightness(0.7);
+}
+
 
 .auth-title {
   margin: 0 0 18px;
