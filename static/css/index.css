@@ -29,7 +29,7 @@ section.home {
   width: 100%;
   font-size: 1.2em;
   color: var(--text-tertiary);
-  max-width: 400px;
+  max-width: 520px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -413,8 +413,8 @@ section.home {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    transparent 42%,
-    var(--background-surface) 78%,
+    transparent 10%,
+    var(--background-surface) 90%,
     var(--background-color) 100%
   );
 }

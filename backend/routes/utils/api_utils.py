@@ -1,6 +1,7 @@
 import html
 import re
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from backend.models import Opinion, Recommendation, User, Serie
 from backend.providers.gemini_provider import GeminiProvider
@@ -65,6 +66,22 @@ def _serialize_recommendation_item(show, ai_pitch=""):
         "image": {"medium": image_url} if image_url else None,
         "ai_pitch": str(ai_pitch or "").strip(),
     }
+
+
+def _resolve_recommended_serie(recommended_serie):
+    title = str(recommended_serie.get("title") or "").strip()
+    if not title:
+        return None
+
+    tvmaze_results = search_series_from_tvmaze(title, limit=1)
+    if not tvmaze_results:
+        return None
+
+    show = _serialize_recommendation_item(tvmaze_results[0], recommended_serie.get("pitch"))
+    if not show["id"] or not show["title"]:
+        return None
+
+    return show
 
 def get_current_user():
     current_username = session.get("user")
@@ -164,17 +181,21 @@ def generate_recommendations_for_user(user):
     seen_ids = set()
     items = []
 
-    for recommended_serie in recommended_series:
-        title = str(recommended_serie.get("title") or "").strip()
-        if not title:
-            continue
+    recommended_series = [
+        recommended_serie
+        for recommended_serie in recommended_series
+        if str(recommended_serie.get("title") or "").strip()
+    ]
 
-        tvmaze_results = search_series_from_tvmaze(title, limit=1)
-        if not tvmaze_results:
-            continue
+    max_workers = min(10, len(recommended_series))
+    resolved_shows = []
 
-        show = _serialize_recommendation_item(tvmaze_results[0], recommended_serie.get("pitch"))
-        if not show["id"] or show["id"] in seen_ids or not show["title"]:
+    if max_workers > 0:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            resolved_shows = list(executor.map(_resolve_recommended_serie, recommended_series))
+
+    for show in resolved_shows:
+        if not show or show["id"] in seen_ids:
             continue
 
         seen_ids.add(show["id"])

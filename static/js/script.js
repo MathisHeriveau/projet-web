@@ -610,7 +610,7 @@ function initRecommendationPage() {
     title.textContent = item.title;
 
     genres.className = "recommendation-card-genres";
-    (item.genres.length ? item.genres : ["Genres indisponibles"]).forEach((genre) => {
+    (item.genres.length ? item.genres.slice(0, 2) : ["Genres indisponibles"]).forEach((genre) => {
       const badge = document.createElement("span");
       badge.className = "recommendation-card-genre";
       badge.textContent = genre;
