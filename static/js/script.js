@@ -67,6 +67,8 @@ function initAuthForm() {
 
     authMessage.textContent = "";
 
+    console.log("Envoi du formulaire d'authentification avec les données :", payload);
+
     try {
       const response = await fetch(authForm.dataset.apiUrl, {
         method: "POST",
@@ -86,13 +88,14 @@ function initAuthForm() {
       window.location.href = data.redirect || authForm.dataset.redirectUrl || "/";
     } catch (_error) {
       authMessage.textContent = "Erreur reseau.";
+      console.error("Erreur réseau lors de l'envoi du formulaire d'authentification :", _error);
     }
   });
 }
 
 /*
 |--------------------------------------------------------------------------
-| GENERATION DU PROFIL
+| GENERATION DU COMPTE
 |--------------------------------------------------------------------------
 | Gère la page de première connexion :
 | - affichage des séries
@@ -100,20 +103,21 @@ function initAuthForm() {
 | - recherche TVMaze
 | - remontée des séries sélectionnées en premier
 */
-function initGenProfile() {
-  const list = document.querySelector(".gen-profile-card-list");
+function initGenAccount() {
+  const list = document.querySelector(".gen-account-card-list");
   if (!list) {
     return;
   }
 
-  const searchForm = document.querySelector("#gen-profile-search-form");
-  const searchInput = document.querySelector("#gen-profile-search-input");
-  const selectionCount = document.querySelector("#gen-profile-selection-count");
-  const profileContinueButton = document.querySelector("#gen-profile-continue-button");
-  const initialShowsScript = document.querySelector("#gen-profile-initial-shows");
+  const searchForm = document.querySelector("#gen-account-search-form");
+  const searchInput = document.querySelector("#gen-account-search-input");
+  const selectionCount = document.querySelector("#gen-account-selection-count");
+  const accountContinueButton = document.querySelector("#gen-account-continue-button");
+  const initialShowsScript = document.querySelector("#gen-account-initial-shows");
   const fallbackImage = list.dataset.fallbackImage || "/static/images/no-image-blog.jpg";
 
   const selectedShows = new Map();
+  let selectedShowsPayload = [];
   let initialShows = [];
 
   /*
@@ -138,11 +142,35 @@ function initGenProfile() {
   | l'interface sans répéter du code partout.
   */
   function getShowId(show) {
-    return String(show?.id ?? show?.name ?? "");
+    return String(show?.id ?? show?.title ?? show?.name ?? "");
   }
 
   function getShowImage(show) {
     return show?.image?.medium || fallbackImage;
+  }
+
+  function getShowTitle(show) {
+    return String(show?.title || show?.name || "Serie sans nom").trim() || "Serie sans nom";
+  }
+
+  function getShowGenres(show) {
+    if (Array.isArray(show?.genres)) {
+      return show.genres.filter(Boolean);
+    }
+
+    const genre = String(show?.genre || "").trim();
+    return genre ? [genre] : [];
+  }
+
+  function getShowSummary(show) {
+    const rawSummary = String(show?.summary || "").trim();
+    if (!rawSummary) {
+      return "";
+    }
+
+    const summaryContainer = document.createElement("div");
+    summaryContainer.innerHTML = rawSummary;
+    return summaryContainer.textContent?.trim() || rawSummary;
   }
 
   function normalizeShow(show) {
@@ -152,23 +180,91 @@ function initGenProfile() {
     }
 
     const image = getShowImage(show);
+    const title = getShowTitle(show);
+    const genres = getShowGenres(show);
+    const summary = getShowSummary(show);
 
     return {
       id,
-      name: show?.name || "Serie sans nom",
-      image: image ? { medium: image } : null,
+      title,
+      genres,
+      summary,
+      image: { medium: image } ,
     };
   }
 
+  function buildSelectedShowsPayload() {
+    return Array.from(selectedShows.values()).map((show) => ({
+      id: show.id,
+      title: show.title || "Serie sans nom",
+      genres: Array.isArray(show.genres) ? show.genres : [],
+      summary: show.summary || "",
+      image: show.image || null,
+    }));
+  }
+
   function updateSelectionCount() {
+    selectedShowsPayload = buildSelectedShowsPayload();
+    list.selectedShowsPayload = selectedShowsPayload;
+
+    console.log("Séries sélectionnées :", selectedShowsPayload);
+
+    if (accountContinueButton) {
+      accountContinueButton.selectedShowsPayload = selectedShowsPayload;
+    }
+
     if (selectionCount) {
       selectionCount.textContent = `${selectedShows.size} série(s) sélectionnée(s)`;
     }
 
-    if (profileContinueButton) {
-      profileContinueButton.classList.toggle("ready", selectedShows.size >= 5);
+    if (accountContinueButton) {
+      accountContinueButton.classList.toggle("ready", selectedShows.size >= 5);
     }
   }
+
+  
+  if (accountContinueButton) {
+    accountContinueButton.addEventListener("click", () => {
+      console.log("Bouton Continuer cliqué. Séries sélectionnées :", Array.from(selectedShows.values()));
+      if (selectedShows.size < 5) {
+        return;
+      }
+
+      const payload = buildSelectedShowsPayload();
+
+      console.log("Envoi du compte avec les séries sélectionnées :", payload);
+
+      fetch(accountContinueButton.dataset.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ shows: payload }),
+      })
+        .then(async (response) => {
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Erreur lors de la sauvegarde.");
+          }
+
+          return data;
+        })
+        .then((data) => {
+          if (data.redirect) {
+            window.location.href = data.redirect;
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          window.alert(error.message || "Erreur lors de la sauvegarde.");
+        });
+
+
+    });
+  }else {
+    console.warn("Bouton Continuer non trouvé. La fonctionnalité de soumission du compte ne fonctionnera pas.");
+  } 
 
   /*
   |--------------------------------------------------------------------------
@@ -178,7 +274,7 @@ function initGenProfile() {
   | même après une recherche puis un retour à la liste de base.
   */
   function sortCards() {
-    const cards = Array.from(list.querySelectorAll(".gen-profile-card-item"));
+    const cards = Array.from(list.querySelectorAll(".gen-account-card-item"));
 
     cards
       .sort((firstCard, secondCard) => {
@@ -234,19 +330,19 @@ function initGenProfile() {
     const name = document.createElement("div");
     const icon = document.createElement("i");
 
-    card.className = "gen-profile-card-item";
+    card.className = "gen-account-card-item";
     card.dataset.showId = show.id;
     card.dataset.renderOrder = String(order);
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
 
     image.src = getShowImage(show);
-    image.alt = show.name;
+    image.alt = show.title;
 
     name.className = "name";
-    name.textContent = show.name;
+    name.textContent = show.title;
 
-    icon.className = "bi bi-check-circle-fill gen-profile-card-icon";
+    icon.className = "bi bi-check-circle-fill gen-account-card-icon";
     icon.setAttribute("aria-hidden", "true");
 
     card.appendChild(image);
@@ -338,4 +434,4 @@ function initGenProfile() {
 */
 initCarousel();
 initAuthForm();
-initGenProfile();
+initGenAccount();

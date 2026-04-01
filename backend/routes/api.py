@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Blueprint, request, session
+from flask import Blueprint, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from backend.enums.http_status import HTTPStatus
@@ -10,7 +10,8 @@ from backend.models import Opinion, User, Serie
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
 from backend.routes.wrapper import login_required
-from google.genai import types
+from google.genai import types 
+
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 gemini_provider = GeminiProvider()
@@ -27,7 +28,7 @@ def login():
 
     user = User.get_by_username(u)
     if user is None or not check_password_hash(user.password_hash, p):
-        return {"error": "invalid credentials", "redirect": "/"}, HTTPStatus.UNAUTHORIZED.value
+        return {"error": "invalid credentials", "redirect": url_for("web.index")}, HTTPStatus.UNAUTHORIZED.value
 
     session["user"] = u
     return {"success": "logged in"}, HTTPStatus.OK.value
@@ -45,13 +46,13 @@ def register():
     user = User.get_by_username(u)
 
     if user is not None:
-        return {"error": "username already taken", "redirect": "/"}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "username already taken", "redirect": url_for("web.index")}, HTTPStatus.BAD_REQUEST.value
 
     user = User(username=u, password_hash=generate_password_hash(p, method="pbkdf2:sha256"))
     session["user"] = u
     db.session.add(user)
     db.session.commit()
-    return {"success": "account created", "redirect": "/"}, HTTPStatus.CREATED.value
+    return {"success": "account created", "redirect": url_for("web.index")}, HTTPStatus.CREATED.value
 
 
 @api_bp.route("/logout")
@@ -61,7 +62,7 @@ def logout():
     Logout
     """
     session.clear()
-    return {"success": "logged out", "redirect": "/login"}, HTTPStatus.OK.value
+    return {"success": "logged out", "redirect": url_for("web.login")}, HTTPStatus.OK.value
 
 
 @api_bp.route("/test")
@@ -96,9 +97,9 @@ def test():
 
     # Helper function to find a Serie or create it if it doesn't exist
     def get_or_create_serie(data):
-        serie = Serie.query.filter_by(name=data["name"]).first()
+        serie = Serie.query.filter_by(title=data["name"]).first()
         if not serie:
-            serie = Serie(name=data["name"], genres=data["genres"], summary=data["summary"])
+            serie = Serie(title=data["name"], genres=data["genres"], summary=data["summary"])
             db.session.add(serie)
             db.session.flush() # Flush pushes the insert to the DB to generate the ID without committing the whole transaction yet
         return serie
@@ -133,7 +134,7 @@ def test():
         # Fetch the linked Serie object to retrieve the actual name
         serie = Serie.get_by_id(op.serie_id)
         opinions_data.append({
-            "serie_name": serie.name if serie else "Unknown",
+            "serie_name": serie.title if serie else "Unknown",
             "opinion": op.opinion.value, 
             "viewed": op.viewed,
         })
@@ -152,28 +153,50 @@ def save_liked_series():
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
     
-    data = request.get_json()
-    id_serie_list = data.get("id", "")
-    title_list = data.get("title", "")
-    genres_list = data.get("genres", "")
-    summary_list = data.get("summary", "")
+    data = request.get_json(silent=True) or {}
+    saved_count = 0
 
-    for id_serie, title, genres, summary in zip(id_serie_list, title_list, genres_list, summary_list):
-        serie = Serie.query.filter_by(name=title, user_id=user.id).first()
+    for show in data.get("shows", []):
+        id_serie = show.get("id")
+        title = str(show.get("title") or "").strip()
+        genres = show.get("genres") or []
+        summary = str(show.get("summary") or "").strip()
+
+        if not id_serie or not title:
+            continue
+
+        serie = Serie.get_by_id(id_serie)
         if not serie:
-            serie = Serie(id=id_serie, name=title, genres=genres, summary=summary)
+            genres_str = ", ".join(genres) if isinstance(genres, list) else str(genres)
+            serie = Serie(
+                id=id_serie,
+                title=title,
+                genres=(genres_str or "Genres inconnus")[:255],
+                summary=(summary or "Resume indisponible")[:255],
+            )
             db.session.add(serie)
             db.session.flush()
+        else:
+            if isinstance(genres, list):
+                serie.genres = (", ".join(genres) or serie.genres)[:255]
+            elif genres:
+                serie.genres = str(genres)[:255]
+
+            if summary:
+                serie.summary = summary[:255]
 
         existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
         if not existing_op:
             opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=OpinionType.LIKED, viewed=True)
             db.session.add(opinion)
+            saved_count += 1
     
-    user.first_connection = False
+    if saved_count == 0:
+        return {"error": "No valid series were saved"}, HTTPStatus.BAD_REQUEST.value
 
+    user.first_connection = False
     db.session.commit()
-    return {"success": "liked series saved"}, HTTPStatus.OK.value
+    return {"success": "liked series saved", "redirect": url_for("web.account")}, HTTPStatus.OK.value
 
 
 @api_bp.route("/recommendation/text", methods=["GET"])
@@ -198,7 +221,7 @@ def recommendation_text():
         if op.opinion == OpinionType.LIKED:
             serie = Serie.get_by_id(op.serie_id)
             if serie:
-                liked_list.append(serie.name)
+                liked_list.append(serie.title)
                 liked_genres_set.update(serie.genres.split(", "))
                 liked_summaries_list.append(serie.summary)
 
@@ -257,10 +280,10 @@ def recommendation():
         serie = Serie.get_by_id(op.serie_id)
         if serie:
             if op.opinion == OpinionType.LIKED:
-                liked_list.append(serie.name)
+                liked_list.append(serie.title)
                 liked_genres_set.update(serie.genres.split(", "))
             elif op.opinion == OpinionType.DISLIKED:
-                disliked_list.append(serie.name)
+                disliked_list.append(serie.title)
                 disliked_genres_set.update(serie.genres.split(", "))
 
     liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
