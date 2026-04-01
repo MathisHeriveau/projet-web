@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 from flask import Blueprint, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -6,7 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from backend.enums.http_status import HTTPStatus
 from backend.enums.opinion_type import OpinionType
 from backend.extensions import db
-from backend.models import Opinion, User, Serie
+from backend.models import Opinion, Recommendation, User, Serie
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
 from backend.routes.wrapper import login_required
@@ -343,7 +344,48 @@ def recommendation():
         config=config,
     )
 
-    return {"success": response.text}, HTTPStatus.OK.value
+    try:
+        gemini_data = json.loads(response.text)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse Gemini response"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+
+    recommended_series = gemini_data.get("series_list", [])
+    enriched_recommendations = []
+
+    for series in recommended_series:
+        title = series.get("title")
+        if not title:
+            continue
+            
+        try:
+            tvmaze_results = search_series_from_tvmaze(title, limit=1)
+            if tvmaze_results:
+                real_show_data = tvmaze_results[0]
+                real_show_data["ai_pitch"] = series.get("pitch") 
+                enriched_recommendations.append(real_show_data)
+            else:
+                enriched_recommendations.append({
+                    "title": title,
+                    "ai_pitch": series.get("pitch"),
+                    "error": "Show not found on TVMaze"
+                })
+
+        except Exception as e:
+            print(f"TVMaze error for {title}: {e}")
+
+    for rec in enriched_recommendations:
+        serie = Serie.get_by_id(rec.get("id"))
+        if not serie:
+            serie = Serie(id=rec.get("id"), title=rec.get("name"), genres=", ".join(rec.get("genres", [])), summary=rec.get("summary", ""))
+            db.session.add(serie)
+            db.session.flush()
+
+        recommendation = Recommendation(ai_pitch=rec.get("ai_pitch"), user_id=user.id, serie_id=serie.id)
+        db.session.add(recommendation)
+
+    db.session.commit()
+
+    return {'success': 'recommedations generated'}, HTTPStatus.OK.value
 
 
 @api_bp.route("/get_all_series")
