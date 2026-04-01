@@ -95,7 +95,7 @@
 }
 
 .gen-account-card {
-  margin-top: 100px;
+  margin-top: 70px;
   width: 100%;
 }
 
@@ -162,7 +162,7 @@
 
 .gen-account-card-list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 20px;
 }
 

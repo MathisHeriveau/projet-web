@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ show.title }}{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/series.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="series-page">
+    <div class="series-layout">
+        <div class="series-poster">
+            <img src="{{ show.image }}" alt="{{ show.title }}">
+        </div>
+
+        <div class="series-content">
+            <div class="series-header">
+                <p class="series-kicker text-secondary">Fiche serie</p>
+                <h1>{{ show.title }}</h1>
+                <div class="series-genres">
+                    {% for genre in show.genres %}
+                    <span class="series-genre">{{ genre }}</span>
+                    {% endfor %}
+                </div>
+                <p class="series-summary text-tertiary">{{ show.summary }}</p>
+            </div>
+
+            <form
+                class="series-form"
+                method="post"
+                data-api-url="{{ url_for('api.set_opinion') }}"
+                data-serie-id="{{ show.id }}"
+            >
+                <div class="series-rating-section">
+                    <h3>Votre note</h3>
+                    <div class="series-actions">
+                        <button class="liked{% if current_opinion == 'liked' %} active{% endif %}" type="submit" name="opinion" value="liked">
+                            <i class="bi bi-hand-thumbs-up-fill" aria-hidden="true"></i>
+                            <span>Aime</span>
+                        </button>
+                        <button class="neutral{% if current_opinion == 'neutral' %} active{% endif %}" type="submit" name="opinion" value="neutral">
+                            <i class="bi bi-dash-circle-fill" aria-hidden="true"></i>
+                            <span>Neutre</span>
+                        </button>
+                        <button class="disliked{% if current_opinion == 'disliked' %} active{% endif %}" type="submit" name="opinion" value="disliked">
+                            <i class="bi bi-hand-thumbs-down-fill" aria-hidden="true"></i>
+                            <span>Pas aime</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

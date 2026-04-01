@@ -10,6 +10,7 @@ def _serialize_show(show):
     return {
         "id": show.get("id"),
         "name": show.get("name"),
+        "premiered": show.get("premiered"),
         "genres": show.get("genres"),
         "summary": show.get("summary"),
         "image": show.get("image"),

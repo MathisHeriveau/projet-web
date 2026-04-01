@@ -4,6 +4,18 @@
 |--------------------------------------------------------------------------
 | Gère le carousel visible sur la page d'accueil.
 */
+function setBodyWaiting(isWaiting) {
+  document.body.classList.toggle("is-waiting", isWaiting);
+}
+
+function waitForNextPaint() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}
+
 function initCarousel() {
   const items = document.querySelectorAll(".carrousel-item");
   if (!items.length) {
@@ -233,6 +245,7 @@ function initGenAccount() {
       const payload = buildSelectedShowsPayload();
 
       console.log("Envoi du compte avec les séries sélectionnées :", payload);
+      setBodyWaiting(true);
 
       fetch(accountContinueButton.dataset.apiUrl, {
         method: "POST",
@@ -258,6 +271,9 @@ function initGenAccount() {
         .catch((error) => {
           console.error(error);
           window.alert(error.message || "Erreur lors de la sauvegarde.");
+        })
+        .finally(() => {
+          setBodyWaiting(false);
         });
 
 
@@ -428,6 +444,74 @@ function initGenAccount() {
 
 /*
 |--------------------------------------------------------------------------
+| FICHE SERIE
+|--------------------------------------------------------------------------
+| Gère l'enregistrement AJAX de la note sans recharger la page.
+*/
+function initSeriesPage() {
+  const seriesForm = document.querySelector(".series-form");
+  if (!seriesForm) {
+    return;
+  }
+
+  const ratingButtons = Array.from(
+    seriesForm.querySelectorAll(".series-actions button[name='opinion']")
+  );
+
+  function setButtonsDisabled(disabled) {
+    ratingButtons.forEach((button) => {
+      button.disabled = disabled;
+    });
+  }
+
+  function setActiveOpinion(opinionValue) {
+    ratingButtons.forEach((button) => {
+      button.classList.toggle("active", button.value === opinionValue);
+    });
+  }
+
+  seriesForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const clickedButton = event.submitter;
+    if (!clickedButton || !clickedButton.value) {
+      return;
+    }
+
+    setButtonsDisabled(true);
+    setBodyWaiting(true);
+
+    try {
+      await waitForNextPaint();
+
+      const response = await fetch(seriesForm.dataset.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serie_id: seriesForm.dataset.serieId,
+          opinion: clickedButton.value,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur.");
+      }
+
+      setActiveOpinion(clickedButton.value);
+    } catch (_error) {
+      console.error("Erreur lors de la sauvegarde de l'opinion :", _error);
+    } finally {
+      setButtonsDisabled(false);
+      setBodyWaiting(false);
+    }
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
 | RECOMMANDATIONS
 |--------------------------------------------------------------------------
 | Gère la page recommandations :
@@ -502,6 +586,7 @@ function initRecommendationPage() {
     const card = document.createElement("article");
     const image = document.createElement("img");
     const content = document.createElement("div");
+    const link = document.createElement("a");
     const title = document.createElement("h4");
     const genres = document.createElement("div");
     const summary = document.createElement("p");
@@ -513,6 +598,9 @@ function initRecommendationPage() {
     image.alt = item.title;
 
     content.className = "recommendation-card-content";
+    link.className = "card-cover-link";
+    link.href = `/series/${encodeURIComponent(item.id)}`;
+    link.setAttribute("aria-label", `Voir la fiche de ${item.title}`);
 
     title.textContent = item.title;
 
@@ -526,7 +614,7 @@ function initRecommendationPage() {
 
     summary.className = "recommendation-card-summary text-tertiary";
     summary.textContent =
-      truncateText(item.summary, 250) || "Resume indisponible pour cette serie.";
+      truncateText(item.summary, 100) || "Resume indisponible pour cette serie.";
 
     content.appendChild(title);
     content.appendChild(genres);
@@ -534,6 +622,7 @@ function initRecommendationPage() {
 
     card.appendChild(image);
     card.appendChild(content);
+    card.appendChild(link);
     return card;
   }
 
@@ -570,6 +659,7 @@ function initRecommendationPage() {
   if (regenerateButton) {
     regenerateButton.addEventListener("click", async () => {
       setButtonsDisabled(true);
+      setBodyWaiting(true);
 
       try {
         const data = await fetchJson(page.dataset.generateTextUrl);
@@ -579,6 +669,7 @@ function initRecommendationPage() {
       } catch (_error) {
       } finally {
         setButtonsDisabled(false);
+        setBodyWaiting(false);
       }
     });
   }
@@ -586,8 +677,11 @@ function initRecommendationPage() {
   if (acceptButton) {
     acceptButton.addEventListener("click", async () => {
       setButtonsDisabled(true);
+      setBodyWaiting(true);
 
       try {
+        await waitForNextPaint();
+
         await fetchJson(page.dataset.saveTextUrl, {
           method: "POST",
           headers: {
@@ -603,6 +697,7 @@ function initRecommendationPage() {
       } catch (_error) {
       } finally {
         setButtonsDisabled(false);
+        setBodyWaiting(false);
       }
     });
   }
@@ -619,4 +714,5 @@ function initRecommendationPage() {
 initCarousel();
 initAuthForm();
 initGenAccount();
+initSeriesPage();
 initRecommendationPage();

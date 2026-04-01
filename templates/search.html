@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Recherche{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="search-page">
+    <div class="search-header">
+        <h1 class="text-primary">Recherche</h1>
+        {% if query %}
+        <p class="text-tertiary">Resultats pour "{{ query }}"</p>
+        {% else %}
+        <p class="text-tertiary">Utilisez la barre du header pour rechercher une série.</p>
+        {% endif %}
+    </div>
+
+    {% if query and shows %}
+    <div class="search-grid">
+        {% for show in shows %}
+        <article class="search-card">
+            <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
+            <img
+                src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg') }}"
+                alt="{{ show.name }}"
+            >
+            <div class="search-card-content">
+                <h2>{{ show.name }}</h2>
+                <p class="search-card-genres text-tertiary">
+                    {{ show.genres|join(" • ") if show.genres else "Genres indisponibles" }}
+                </p>
+                <p class="search-card-summary text-tertiary">
+                    {{ show.summary|striptags|truncate(110, True, '...') if show.summary else "Résumé indisponible." }}
+                </p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% elif query %}
+    <p class="search-empty text-tertiary">Aucun résultat trouvé pour "{{ query }}".</p>
+    {% else %}
+    <p class="search-empty text-tertiary">Aucune recherche lancée pour le moment.</p>
+    {% endif %}
+</section>
+{% endblock %}

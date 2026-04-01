@@ -1,0 +1,118 @@
+.series-page {
+  min-height: calc(100vh - var(--header-height));
+  padding: 40px var(--page-padding);
+}
+
+.series-layout {
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.series-poster {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--background-surface);
+}
+
+.series-poster img {
+  width: 100%;
+  height: auto;
+}
+
+.series-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.series-header h1 {
+  margin: 0;
+  font-size: 3.2rem;
+}
+
+.series-kicker {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.series-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.series-genre {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--status-neutral-border);
+  border-radius: 999px;
+  background: var(--status-neutral-background);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.series-summary {
+  margin: 18px 0 0;
+  max-width: 80ch;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.series-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--background-surface);
+}
+
+.series-form-header h2,
+.series-rating-section h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.series-form-header p {
+  margin: 8px 0 0;
+}
+
+.series-rating-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+.series-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.series-actions .liked,
+.series-actions .neutral,
+.series-actions .disliked {
+  margin: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.series-actions .liked.active,
+.series-actions .neutral.active,
+.series-actions .disliked.active {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--text-primary);
+}
