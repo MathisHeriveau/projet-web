@@ -1,0 +1,124 @@
+.recommendation-page {
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 0 var(--page-padding) 32px;
+}
+
+.recommendation-title {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.recommendation-title h2 {
+    font-size: 2.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.recommendation-title p {
+    margin: 0;
+    padding: 0;
+    font-size: 1.2rem;
+}
+
+.recommendation-container {
+    display: flex;
+    margin-top: 24px;
+    flex-direction: column;
+    width: min(100%, 760px);
+}
+
+.recommendation-preferences {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0 auto;
+    text-align: left;
+    padding: 28px;
+    border-radius: 20px;
+}
+
+.recommendation-preferences label {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.recommendation-preferences textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    background: var(--background-surface);
+    color: var(--text-primary);
+    resize: vertical;
+}
+
+.recommendation-preferences textarea:focus {
+    outline: none;
+    border-color: var(--status-liked-border);
+}
+
+.recommendation-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.recommendation-button-regenerate,
+.recommendation-button-accept {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.recommendation-button-regenerate {
+    background: var(--status-neutral-background);
+    border: 1px solid var(--status-neutral-border);
+}
+
+.recommendation-button-accept {
+    background: var(--status-liked-background);
+    border: 1px solid var(--status-liked-border);
+}
+
+@media (max-width: 640px) {
+    .recommendation-page {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .recommendation-title h2 {
+        font-size: 2rem;
+    }
+
+    .recommendation-title p {
+        font-size: 1rem;
+    }
+
+    .recommendation-preferences {
+        padding: 22px 18px;
+    }
+
+    .recommendation-buttons {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .recommendation-button-regenerate,
+    .recommendation-button-accept {
+        justify-content: center;
+        width: 100%;
+    }
+}

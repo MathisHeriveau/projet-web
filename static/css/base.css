@@ -8,6 +8,15 @@
   --text-secondary: #b81e21;
   --text-tertiary: #9da2a5;
   --border-color: #192d3f;
+  --status-liked-text: #b9f5d9;
+  --status-liked-background: rgba(53, 155, 108, 0.16);
+  --status-liked-border: rgba(73, 196, 137, 0.25);
+  --status-neutral-text: var(--text-primary);
+  --status-neutral-background: rgba(255, 255, 255, 0.08);
+  --status-neutral-border: rgba(255, 255, 255, 0.14);
+  --status-disliked-text: #ffd0d1;
+  --status-disliked-background: rgba(184, 30, 33, 0.18);
+  --status-disliked-border: rgba(184, 30, 33, 0.35);
 }
 
 * {
@@ -105,18 +114,12 @@ nav {
 }
 
 .search-bar button,
-.profil button {
+.logout-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-}
-
-.profil-button i {
-  margin-right: 5px;
 }
 
 .search-bar input {
@@ -130,31 +133,27 @@ nav {
   outline: none;
 }
 
-.profil {
-  position: relative;
+.search-bar button {
+  border: 0;
+  background: transparent;
 }
 
-.dropdown {
-  position: absolute;
-  top: calc(100%);
-  right: 0;
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+.logout-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--status-neutral-background);
+  border: 1px solid var(--status-neutral-border);
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.logout-button::after {
   display: none;
-  flex-direction: column;
-  z-index: 9;
 }
 
-.profil:hover .dropdown {
-  display: flex;
-}
-
-.dropdown a {
-  padding: 10px;
-  color: var(--text-primary);
-}
-
-.dropdown a:hover {
-  background: var(--border-color);
+.logout-button:hover {
+  background: var(--status-disliked-background);
+  border-color: var(--status-disliked-border);
+  transform: translateY(-1px);
 }

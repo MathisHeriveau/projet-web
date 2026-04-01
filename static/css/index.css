@@ -375,21 +375,21 @@ section.home {
 }
 
 .liked {
-  color: #b9f5d9;
-  background: rgba(53, 155, 108, 0.16);
-  border-color: rgba(73, 196, 137, 0.25);
+  color: var(--status-liked-text);
+  background: var(--status-liked-background);
+  border-color: var(--status-liked-border);
 }
 
 .neutral {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--status-neutral-text);
+  background: var(--status-neutral-background);
+  border-color: var(--status-neutral-border);
 }
 
 .disliked {
-  color: #ffd0d1;
-  background: rgba(184, 30, 33, 0.18);
-  border-color: rgba(184, 30, 33, 0.35);
+  color: var(--status-disliked-text);
+  background: var(--status-disliked-background);
+  border-color: var(--status-disliked-border);
 }
 
 @media (max-width: 980px) {
