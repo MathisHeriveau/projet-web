@@ -1,25 +1,22 @@
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
-*$py.class
 
-# Virtualenvs
+# Virtual environment
 .venv/
-venv/
-env/
 
-# Local env files
+# Local secrets
 .env
 .env.*
 !.env.template
 
-# Flask / local app data
+# Local app data
 instance/
 *.db
 *.sqlite
 *.sqlite3
 
-# Tooling caches
+# Tooling cache
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
