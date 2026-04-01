@@ -42,7 +42,7 @@ class Opinion(db.Model):
     
 class Serie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
     genres = db.Column(db.String(255), nullable=False)
     summary = db.Column(db.String(255), nullable=False)
 

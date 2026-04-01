@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Mon Profil{% endblock %}
+
+{% block content %}
+<section style="padding: 40px;">
+    <h1 class="text-primary">Mon profil</h1>
+    <p class="text-tertiary">Compte connecté : {{ g.user.username if g.user else session.get('user') }}</p>
+</section>
+{% endblock %}

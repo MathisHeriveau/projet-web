@@ -1,4 +1,4 @@
-.gen-profile-page {
+.gen-account-page {
   min-height: calc(100vh - var(--header-height));
   display: flex;
   align-items: center;
@@ -20,24 +20,24 @@
   object-fit: cover;
 }
 
-.gen-profile-title {
+.gen-account-title {
   text-align: center;
 }
 
-.gen-profile-title h2 {
+.gen-account-title h2 {
   font-size: 2.5rem;
   margin: 0;
   padding: 0;
 }
 
-.gen-profile-title p {
+.gen-account-title p {
   margin: 0;
   padding: 0;
   font-size: 1.2rem;
 }
 
 /* UNE PARRTIE TROUVER SUR CODEPEN, A ADAPTER POUR LE PROFIL */
-.gen-profile-gemini {
+.gen-account-gemini {
   position: relative;
   margin-top: 100px;
   text-align: center;
@@ -51,7 +51,7 @@
   margin-left: 10%;
 }
 
-.gen-profile-gemini::before {
+.gen-account-gemini::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -71,40 +71,40 @@
 }
 /* FIN PARTIE CODEPEN */
 
-.gen-profile-gemini-title {
+.gen-account-gemini-title {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-.gen-profile-gemini-title h3 {
+.gen-account-gemini-title h3 {
   font-size: 2.5rem;
   margin: 0;
   padding: 0;
 }
 
-.gen-profile-gemini p {
+.gen-account-gemini p {
   margin-top: 20px;
   font-size: 1.25rem;
   text-align: left;
 }
 
-.gen-profile-gemini-title .gemini-logo {
+.gen-account-gemini-title .gemini-logo {
   width: 45px; 
   height: 45px;
 }
 
-.gen-profile-card {
+.gen-account-card {
   margin-top: 100px;
   width: 100%;
 }
 
-.gen-profile-search {
+.gen-account-search {
   width: min(100%, 760px);
   margin: 0 auto 26px;
 }
 
-.gen-profile-search-field {
+.gen-account-search-field {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -115,12 +115,12 @@
   backdrop-filter: blur(8px);
 }
 
-.gen-profile-search-field i {
+.gen-account-search-field i {
   color: var(--text-secondary);
   font-size: 1rem;
 }
 
-.gen-profile-search-field input {
+.gen-account-search-field input {
   flex: 1;
   min-width: 0;
   border: none;
@@ -128,11 +128,11 @@
   color: var(--text-primary);
 }
 
-.gen-profile-search-field input:focus {
+.gen-account-search-field input:focus {
   outline: none;
 }
 
-.gen-profile-search-field button {
+.gen-account-search-field button {
   border: none;
   border-radius: 10px;
   padding: 10px 16px;
@@ -142,17 +142,17 @@
   cursor: pointer;
 }
 
-.gen-profile-search-message {
+.gen-account-search-message {
   min-height: 1.2rem;
   margin: 10px 4px 0;
   font-size: 0.92rem;
 }
 
-.gen-profile-card-list-wrapper {
+.gen-account-card-list-wrapper {
   margin-top: 30px;
 }
 
-.gen-profile-card-list-toolbar {
+.gen-account-card-list-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -160,13 +160,13 @@
   margin-bottom: 18px;
 }
 
-.gen-profile-card-list {
+.gen-account-card-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 20px;
 }
 
-.gen-profile-card-item {
+.gen-account-card-item {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -176,17 +176,17 @@
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.gen-profile-card-item:hover {
+.gen-account-card-item:hover {
   border-color: var(--text-primary);
   cursor: pointer;
 }
 
-.gen-profile-card-item.selected {
+.gen-account-card-item.selected {
   border-color: var(--text-secondary);
   box-shadow: 0 0 0 2px rgba(184, 30, 33, 0.22);
 }
 
-.gen-profile-card-item::after {
+.gen-account-card-item::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -200,7 +200,7 @@
   pointer-events: none;
 }
 
-.gen-profile-card-icon {
+.gen-account-card-icon {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -220,13 +220,13 @@
   pointer-events: none;
 }
 
-.gen-profile-card-item.selected .gen-profile-card-icon {
+.gen-account-card-item.selected .gen-account-card-icon {
   opacity: 1;
   transform: scale(1);
   background: var(--text-secondary);
 }
 
-.gen-profile-card-item img {
+.gen-account-card-item img {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
@@ -234,12 +234,12 @@
   transition: transform 0.35s ease, filter 0.35s ease;
 }
 
-.gen-profile-card-item:hover img {
+.gen-account-card-item:hover img {
   transform: scale(1.04);
   filter: brightness(0.8) saturate(1.05);
 }
 
-.gen-profile-card-item .name {
+.gen-account-card-item .name {
   padding: 14px;
   font-weight: 700;
   color: var(--text-primary);
@@ -254,39 +254,39 @@
 }
 
 
-.gen-profile-empty {
+.gen-account-empty {
   grid-column: 1 / -1;
   text-align: center;
 }
 
-.gen-profile-card-title {
+.gen-account-card-title {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.gen-profile-card-title p {
+.gen-account-card-title p {
   font-size: 1.5rem;
   margin: 0;
   padding: 0;
 }
 
-.gen-profile-selection-count,
-.gen-profile-continue-message {
+.gen-account-selection-count,
+.gen-account-continue-message {
   min-height: 1.2rem;
   margin: 0;
   font-size: 0.95rem;
 }
 
-.gen-profile-selection-count {
+.gen-account-selection-count {
   text-align: left;
 }
 
-.gen-profile-continue-message {
+.gen-account-continue-message {
   margin-top: 12px;
   text-align: right;
 }
 
-.gen-profile-continue-button {
+.gen-account-continue-button {
   min-width: 220px;
   border: none;
   border-radius: 12px;
@@ -299,43 +299,43 @@
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.gen-profile-continue-button:hover {
+.gen-account-continue-button:hover {
   transform: translateY(-1px);
 }
 
-.gen-profile-continue-button.ready {
+.gen-account-continue-button.ready {
   background: var(--button-background);
   box-shadow: 0 14px 28px rgba(184, 30, 33, 0.24);
 }
 
-.gen-profile-continue-message.error {
+.gen-account-continue-message.error {
   color: #ffb4b6;
 }
 
-.gen-profile-continue-message.success {
+.gen-account-continue-message.success {
   color: #b9f5d9;
 }
 
 @media (max-width: 760px) {
-  .gen-profile-search-field {
+  .gen-account-search-field {
     flex-wrap: wrap;
   }
 
-  .gen-profile-search-field button {
+  .gen-account-search-field button {
     width: 100%;
   }
 
-  .gen-profile-card-list-toolbar {
+  .gen-account-card-list-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .gen-profile-continue-button {
+  .gen-account-continue-button {
     width: 100%;
   }
 
-  .gen-profile-selection-count,
-  .gen-profile-continue-message {
+  .gen-account-selection-count,
+  .gen-account-continue-message {
     text-align: center;
   }
 }
