@@ -171,19 +171,19 @@ def save_liked_series():
             serie = Serie(
                 id=id_serie,
                 title=title,
-                genres=(genres_str or "Genres inconnus")[:255],
-                summary=(summary or "Resume indisponible")[:255],
+                genres=genres_str,
+                summary=summary,
             )
             db.session.add(serie)
             db.session.flush()
         else:
             if isinstance(genres, list):
-                serie.genres = (", ".join(genres) or serie.genres)[:255]
+                serie.genres = (", ".join(genres) or serie.genres)
             elif genres:
-                serie.genres = str(genres)[:255]
+                serie.genres = str(genres)
 
             if summary:
-                serie.summary = summary[:255]
+                serie.summary = summary
 
         existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
         if not existing_op:
@@ -196,6 +196,7 @@ def save_liked_series():
 
     user.first_connection = False
     db.session.commit()
+
     return {"success": "liked series saved", "redirect": url_for("web.account")}, HTTPStatus.OK.value
 
 @api_bp.route("/save_recommendation_text", methods=["POST"])
