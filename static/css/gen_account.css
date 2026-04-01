@@ -100,7 +100,7 @@
 }
 
 .gen-account-search {
-  width: min(100%, 760px);
+  width: 760px;
   margin: 0 auto 26px;
 }
 
@@ -162,7 +162,7 @@
 
 .gen-account-card-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -183,7 +183,6 @@
 
 .gen-account-card-item.selected {
   border-color: var(--text-secondary);
-  box-shadow: 0 0 0 2px rgba(184, 30, 33, 0.22);
 }
 
 .gen-account-card-item::after {
@@ -250,7 +249,6 @@
   right: 0;
   z-index: 2;
   line-height: 1.2;
-  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.75);
 }
 
 
@@ -305,7 +303,6 @@
 
 .gen-account-continue-button.ready {
   background: var(--button-background);
-  box-shadow: 0 14px 28px rgba(184, 30, 33, 0.24);
 }
 
 .gen-account-continue-message.error {
@@ -314,28 +311,4 @@
 
 .gen-account-continue-message.success {
   color: #b9f5d9;
-}
-
-@media (max-width: 760px) {
-  .gen-account-search-field {
-    flex-wrap: wrap;
-  }
-
-  .gen-account-search-field button {
-    width: 100%;
-  }
-
-  .gen-account-card-list-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .gen-account-continue-button {
-    width: 100%;
-  }
-
-  .gen-account-selection-count,
-  .gen-account-continue-message {
-    text-align: center;
-  }
 }

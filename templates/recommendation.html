@@ -13,35 +13,35 @@
     data-save-text-url="{{ url_for('api.save_recommendation_text') }}"
     data-generate-series-url="{{ url_for('api.recommendation') }}"
 >
-    <div class="recommendation-title">
-        <h2><span class="text-primary">Ajustez les recommandations</span></h2>
-        <p class="text-tertiary">Affinez les genres de séries que vous souhaitez découvrir ou à éviter pour personnaliser vos recommandations.</p>
-    </div>
     <div class="recommendation-container">
-        <div class="recommendation-hero">
-            <div class="recommendation-preferences">
-                <div class="recommendation-preferences-header">
-                    <label for="text-recommendation">Texte des recommandations</label>
-                    <p class="text-tertiary">Décrivez précisément ce que vous aimez regarder pour guider la génération de séries qui vous ressemblent vraiment.</p>
+        <div class="recommendation-top">
+            <div class="recommendation-left-column">
+                <div class="recommendation-title">
+                    <h2><span class="text-primary">Ajustez les recommandations</span></h2>
+                    <p class="text-tertiary">Affinez les genres de séries que vous souhaitez découvrir ou à éviter pour personnaliser vos recommandations.</p>
                 </div>
-                <textarea name="text-recommendation" id="text-recommendation" rows="5" placeholder="Entrez vos préférences de genres, séries à éviter, ou tout autre détail pour affiner vos recommandations...">{{ recommendation_text or "" }}</textarea>
-                <p id="recommendation-message" class="recommendation-message text-tertiary"></p>
-                <div class="recommendation-buttons">
-                    <button id="recommendation-regenerate-button" class="recommendation-button-regenerate" type="button">
-                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
-                        Régénérer les recommandations
-                    </button>
-                    <button id="recommendation-accept-button" class="recommendation-button-accept" type="button">
-                        <i class="bi bi-check" aria-hidden="true"></i>
-                        Accepter les recommandations
-                    </button>
+                <div class="recommendation-hero">
+                    <div class="recommendation-preferences">
+                        <div class="recommendation-preferences-header">
+                            <label for="text-recommendation">Texte des recommandations</label>
+                            <p class="text-tertiary">Décrivez précisément ce que vous aimez regarder pour guider la génération de séries qui vous ressemblent vraiment.</p>
+                        </div>
+                        <textarea name="text-recommendation" id="text-recommendation" rows="5" placeholder="Entrez vos préférences de genres, séries à éviter, ou tout autre détail pour affiner vos recommandations...">{{ recommendation_text or "" }}</textarea>
+                        <div class="recommendation-buttons">
+                            <button id="recommendation-regenerate-button" class="recommendation-button-regenerate" type="button">
+                                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                                Régénérer les recommandations
+                            </button>
+                            <button id="recommendation-accept-button" class="recommendation-button-accept" type="button">
+                                <i class="bi bi-check" aria-hidden="true"></i>
+                                Accepter les recommandations
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="recommendation-visual-card">
-                <img src="{{ url_for('static', filename='images/no-image-blog.jpg') }}" alt="Illustration recommendations">
-                <div class="recommendation-visual-content">
-                    <p class="text-tertiary">Le texte que vous validez alimente ensuite les recommandations affichées juste en dessous.</p>
-                </div>
+                <img src="{{ url_for('api.gen_genre_chart') }}" alt="Graphique des genres">
             </div>
         </div>
         <div class="recommendation-results">

@@ -19,7 +19,6 @@
             {% if session.get('user') %}
             {% if not is_first_connection %}
             <a href="{{ url_for('web.index') }}">Accueil</a>
-            <a href="{{ url_for('web.series') }}">Mes séries</a>
             <a href="{{ url_for('web.recommendations') }}">Recommandations</a>
             <div class="search-bar">
                 <button type="button" aria-label="Rechercher">

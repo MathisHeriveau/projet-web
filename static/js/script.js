@@ -445,7 +445,6 @@ function initRecommendationPage() {
   const textArea = document.querySelector("#text-recommendation");
   const regenerateButton = document.querySelector("#recommendation-regenerate-button");
   const acceptButton = document.querySelector("#recommendation-accept-button");
-  const message = document.querySelector("#recommendation-message");
   const list = document.querySelector("#recommendation-card-list");
   const empty = document.querySelector("#recommendation-empty");
   const initialItemsScript = document.querySelector("#recommendation-initial-items");
@@ -458,19 +457,6 @@ function initRecommendationPage() {
       initialItems = JSON.parse(initialItemsScript.textContent || "[]");
     } catch (_error) {
       initialItems = [];
-    }
-  }
-
-  function setMessage(text, type = "") {
-    if (!message) {
-      return;
-    }
-
-    message.textContent = text;
-    message.classList.remove("success", "error");
-
-    if (type) {
-      message.classList.add(type);
     }
   }
 
@@ -487,6 +473,7 @@ function initRecommendationPage() {
   function normalizeRecommendation(item) {
     const id = String(item?.id ?? "").trim();
     const title = String(item?.title || item?.name || "Serie sans nom").trim();
+    const genres = Array.isArray(item?.genres) ? item.genres.filter(Boolean) : [];
     const rawSummary = String(item?.summary || "").trim();
     const image = item?.image?.medium || item?.image?.original || fallbackImage;
 
@@ -496,6 +483,7 @@ function initRecommendationPage() {
     return {
       id,
       title: title || "Serie sans nom",
+      genres,
       summary: summaryContainer.textContent?.trim() || rawSummary,
       image,
     };
@@ -515,6 +503,7 @@ function initRecommendationPage() {
     const image = document.createElement("img");
     const content = document.createElement("div");
     const title = document.createElement("h4");
+    const genres = document.createElement("div");
     const summary = document.createElement("p");
 
     card.className = "recommendation-card";
@@ -527,11 +516,20 @@ function initRecommendationPage() {
 
     title.textContent = item.title;
 
+    genres.className = "recommendation-card-genres";
+    (item.genres.length ? item.genres : ["Genres indisponibles"]).forEach((genre) => {
+      const badge = document.createElement("span");
+      badge.className = "recommendation-card-genre";
+      badge.textContent = genre;
+      genres.appendChild(badge);
+    });
+
     summary.className = "recommendation-card-summary text-tertiary";
     summary.textContent =
       truncateText(item.summary, 250) || "Resume indisponible pour cette serie.";
 
     content.appendChild(title);
+    content.appendChild(genres);
     content.appendChild(summary);
 
     card.appendChild(image);
@@ -572,16 +570,13 @@ function initRecommendationPage() {
   if (regenerateButton) {
     regenerateButton.addEventListener("click", async () => {
       setButtonsDisabled(true);
-      setMessage("Regeneration du texte en cours...");
 
       try {
         const data = await fetchJson(page.dataset.generateTextUrl);
         if (textArea) {
           textArea.value = data.text || "";
         }
-        setMessage("Le texte de recommandations a ete regenere.", "success");
-      } catch (error) {
-        setMessage(error.message || "Erreur lors de la regeneration du texte.", "error");
+      } catch (_error) {
       } finally {
         setButtonsDisabled(false);
       }
@@ -591,7 +586,6 @@ function initRecommendationPage() {
   if (acceptButton) {
     acceptButton.addEventListener("click", async () => {
       setButtonsDisabled(true);
-      setMessage("Sauvegarde du texte et generation des recommandations...");
 
       try {
         await fetchJson(page.dataset.saveTextUrl, {
@@ -606,9 +600,7 @@ function initRecommendationPage() {
 
         const data = await fetchJson(page.dataset.generateSeriesUrl);
         renderRecommendations(data.items || []);
-        setMessage("Les recommandations ont ete mises a jour.", "success");
-      } catch (error) {
-        setMessage(error.message || "Erreur lors de la sauvegarde des recommandations.", "error");
+      } catch (_error) {
       } finally {
         setButtonsDisabled(false);
       }
