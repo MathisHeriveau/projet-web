@@ -14,6 +14,7 @@ class User(db.Model):
 
 class Recommendation(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    ai_pitch = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     serie_id = db.Column(db.Integer, db.ForeignKey('serie.id'), nullable=False)
 
