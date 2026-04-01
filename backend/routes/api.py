@@ -140,6 +140,41 @@ def test():
 
     return {"opinions": opinions_data}, HTTPStatus.OK.value
 
+@api_bp.route("/save_liked_series", methods=["POST"])
+@login_required
+def save_liked_series():
+    """
+    Save the user's liked series
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+    
+    data = request.get_json()
+    id_serie_list = data.get("id", "")
+    title_list = data.get("title", "")
+    genres_list = data.get("genres", "")
+    summary_list = data.get("summary", "")
+
+    for id_serie, title, genres, summary in zip(id_serie_list, title_list, genres_list, summary_list):
+        serie = Serie.query.filter_by(name=title, user_id=user.id).first()
+        if not serie:
+            serie = Serie(id=id_serie, name=title, genres=genres, summary=summary)
+            db.session.add(serie)
+            db.session.flush()
+
+        existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
+        if not existing_op:
+            opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=OpinionType.LIKED, viewed=True)
+            db.session.add(opinion)
+    
+    user.first_connection = False
+
+    db.session.commit()
+    return {"success": "liked series saved"}, HTTPStatus.OK.value
+
 
 @api_bp.route("/recommendation/text", methods=["GET"])
 @login_required
