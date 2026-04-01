@@ -6,26 +6,14 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from backend.enums.http_status import HTTPStatus
 from backend.enums.opinion_type import OpinionType
 from backend.extensions import db
-from backend.models import Opinion, User
+from backend.models import Opinion, User, Serie
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
 from backend.routes.wrapper import login_required
+from google.genai import types
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 gemini_provider = GeminiProvider()
-
-
-def _get_gemini_types():
-    unavailable_reason = gemini_provider.get_unavailable_reason()
-    if unavailable_reason is not None:
-        return None, ({"error": unavailable_reason}, HTTPStatus.INTERNAL_SERVER_ERROR.value)
-
-    try:
-        from google.genai import types
-    except ImportError:
-        return None, ({"error": "Gemini dependencies are not installed"}, HTTPStatus.INTERNAL_SERVER_ERROR.value)
-
-    return types, None
 
 
 @api_bp.route("/login", methods=["POST"])
@@ -80,7 +68,8 @@ def logout():
 @login_required
 def test():
     """
-    Test route to add 5 liked and 5 disliked opinions for the current user in the database with real names of series, then return all the opinions of the user.
+    Test route to add 5 liked and 5 disliked opinions for the current user in the database 
+    with real names of series, then return all the opinions of the user.
     """
     current_username = session.get("user")
     user = User.get_by_username(current_username)
@@ -88,27 +77,66 @@ def test():
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
 
-    liked_series = ["Breaking Bad", "Stranger Things", "The Crown", "The Mandalorian", "The Witcher"]
-    for serie in liked_series:
-        opinion = Opinion(user_id=user.id, serie_name=serie, opinion=OpinionType.LIKED, viewed=True)
-        db.session.add(opinion)
+    # 1. Define series data including the new 'genres' and 'summary' fields
+    liked_series_data = [
+        {"name": "Breaking Bad", "genres": "Drama, Crime", "summary": "A chemistry teacher turns to cooking meth."},
+        {"name": "Stranger Things", "genres": "Sci-Fi, Horror", "summary": "Kids fight monsters from the Upside Down."},
+        {"name": "The Crown", "genres": "Drama, History", "summary": "The reign of Queen Elizabeth II."},
+        {"name": "The Mandalorian", "genres": "Sci-Fi, Action", "summary": "A lone bounty hunter navigates the outer reaches."},
+        {"name": "The Witcher", "genres": "Fantasy, Action", "summary": "A monster hunter struggles to find his place."}
+    ]
+    
+    disliked_series_data = [
+        {"name": "Game of Thrones", "genres": "Fantasy, Drama", "summary": "Noble families fight for the Iron Throne."},
+        {"name": "The Big Bang Theory", "genres": "Comedy", "summary": "Geeky physicists learn about life and love."},
+        {"name": "Lost", "genres": "Sci-Fi, Mystery", "summary": "Survivors of a plane crash on a mysterious island."},
+        {"name": "How I Met Your Mother", "genres": "Comedy, Romance", "summary": "A father recounts his youth to his kids."},
+        {"name": "The Walking Dead", "genres": "Horror, Drama", "summary": "Survivors navigate a zombie apocalypse."}
+    ]
 
-    disliked_series = ["Game of Thrones", "The Big Bang Theory", "Lost", "How I Met Your Mother", "The Walking Dead"]
-    for serie in disliked_series:
-        opinion = Opinion(user_id=user.id, serie_name=serie, opinion=OpinionType.DISLIKED, viewed=True)
-        db.session.add(opinion)
+    # Helper function to find a Serie or create it if it doesn't exist
+    def get_or_create_serie(data):
+        serie = Serie.query.filter_by(name=data["name"]).first()
+        if not serie:
+            serie = Serie(name=data["name"], genres=data["genres"], summary=data["summary"])
+            db.session.add(serie)
+            db.session.flush() # Flush pushes the insert to the DB to generate the ID without committing the whole transaction yet
+        return serie
 
+    # 2. Process Liked Series
+    for data in liked_series_data:
+        serie = get_or_create_serie(data)
+        
+        # Check if opinion already exists so we don't duplicate if you hit the test route twice
+        existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
+        if not existing_op:
+            opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=OpinionType.LIKED, viewed=True)
+            db.session.add(opinion)
+
+    # 3. Process Disliked Series
+    for data in disliked_series_data:
+        serie = get_or_create_serie(data)
+        
+        existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
+        if not existing_op:
+            opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=OpinionType.DISLIKED, viewed=True)
+            db.session.add(opinion)
+
+    # Commit everything at once!
     db.session.commit()
 
+    # 4. Fetch the opinions and construct the response
     opinions = Opinion.get_by_user_id(user.id)
-    opinions_data = [
-        {
-            "serie_name": op.serie_name,
-            "opinion": op.opinion.value,
+    opinions_data = []
+    
+    for op in opinions:
+        # Fetch the linked Serie object to retrieve the actual name
+        serie = Serie.get_by_id(op.serie_id)
+        opinions_data.append({
+            "serie_name": serie.name if serie else "Unknown",
+            "opinion": op.opinion.value, 
             "viewed": op.viewed,
-        }
-        for op in opinions
-    ]
+        })
 
     return {"opinions": opinions_data}, HTTPStatus.OK.value
 
@@ -119,10 +147,6 @@ def recommendation_text():
     """
     Generate a recommendation text from Gemini based on the user's liked series
     """
-    types, error_response = _get_gemini_types()
-    if error_response is not None:
-        return error_response
-
     current_username = session.get("user")
     user = User.get_by_username(current_username)
 
@@ -130,13 +154,29 @@ def recommendation_text():
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
 
     user_opinions = Opinion.get_by_user_id(user.id)
-    liked_list = [op.serie_name for op in user_opinions if op.opinion == OpinionType.LIKED]
+
+    liked_list = []
+    liked_genres_set = set()
+    liked_summaries_list = []
+
+    for op in user_opinions:
+        if op.opinion == OpinionType.LIKED:
+            serie = Serie.get_by_id(op.serie_id)
+            if serie:
+                liked_list.append(serie.name)
+                liked_genres_set.update(serie.genres.split(", "))
+                liked_summaries_list.append(serie.summary)
+
     liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
+    liked_genres_str = ", ".join(liked_genres_set) if liked_genres_set else "No liked genres yet"
+    liked_summaries_str = " ".join(liked_summaries_list) if liked_summaries_list else "No summaries available"
 
     profile_context = f"""
     You are an expert TV show recommender.
     Here is the user's profile data:
     - Series they love: {liked_str}
+    - Genres they love: {liked_genres_str}
+    - Summary of loved series: {liked_summaries_str}
 
     Rules:
     1. Try to match the vibe of their 'love' list.
@@ -165,10 +205,6 @@ def recommendation():
     """
     Recommendation from Gemini
     """
-    types, error_response = _get_gemini_types()
-    if error_response is not None:
-        return error_response
-
     current_username = session.get("user")
     user = User.get_by_username(current_username)
 
@@ -176,23 +212,41 @@ def recommendation():
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
 
     user_opinions = Opinion.get_by_user_id(user.id)
-    liked_list = [op.serie_name for op in user_opinions if op.opinion == OpinionType.LIKED]
-    disliked_list = [op.serie_name for op in user_opinions if op.opinion == OpinionType.DISLIKED]
+    
+    liked_list = []
+    liked_genres_set = set()
+    disliked_list = []
+    disliked_genres_set = set()
+
+    for op in user_opinions:
+        serie = Serie.get_by_id(op.serie_id)
+        if serie:
+            if op.opinion == OpinionType.LIKED:
+                liked_list.append(serie.name)
+                liked_genres_set.update(serie.genres.split(", "))
+            elif op.opinion == OpinionType.DISLIKED:
+                disliked_list.append(serie.name)
+                disliked_genres_set.update(serie.genres.split(", "))
 
     liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
+    liked_genres_str = ", ".join(liked_genres_set) if liked_genres_set else "No liked genres yet"
     disliked_str = ", ".join(disliked_list) if disliked_list else "No disliked series yet"
+    disliked_genres_str = ", ".join(disliked_genres_set) if disliked_genres_set else "No disliked genres yet"
 
     profile_context = f"""
     You are an expert TV show recommender.
     Here is the user's profile data:
     - Series they love: {liked_str}
+    - Genres they love: {liked_genres_str}
     - Series they dislike: {disliked_str}
+    - Genres they dislike: {disliked_genres_str}
 
     Rules:
     1. Never recommend anything in their 'dislike' list.
     2. Try to match the vibe of their 'love' list.
     3. Do not recommend series they already love (they already watched them).
     4. Return exactly 10 recommendations.
+    5. The serie's name, genres and summary has to be written in french.
     """
 
     config = types.GenerateContentConfig(
