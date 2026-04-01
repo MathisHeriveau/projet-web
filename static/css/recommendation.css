@@ -23,6 +23,7 @@
 }
 
 .recommendation-left-column {
+    --recommendation-content-padding: 34px;
     display: flex;
     flex-direction: column;
     gap: 28px;
@@ -31,6 +32,7 @@
 .recommendation-title {
     width: 100%;
     margin: 0;
+    padding-left: var(--recommendation-content-padding);
     text-align: left;
 }
 
@@ -62,7 +64,7 @@
     width: 100%;
     margin: 0 auto;
     text-align: left;
-    padding: 34px;
+    padding: var(--recommendation-content-padding);
     border-radius: 28px;
 }
 
