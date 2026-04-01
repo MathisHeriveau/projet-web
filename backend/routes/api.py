@@ -198,6 +198,26 @@ def save_liked_series():
     db.session.commit()
     return {"success": "liked series saved", "redirect": url_for("web.account")}, HTTPStatus.OK.value
 
+@api_bp.route("/save_recommendation_text", methods=["POST"])
+@login_required
+def save_recommendation_text():
+    """
+    Save the recommendation text
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+    
+    data = request.get_json()
+    recommendation_text = data.get("recommendation_text", "")
+    user.recommendation_text = recommendation_text
+
+    db.session.commit()
+    
+    return {"success": "recommendation text saved"}, HTTPStatus.OK.value
+
 
 @api_bp.route("/recommendation/text", methods=["GET"])
 @login_required
@@ -235,6 +255,8 @@ def recommendation_text():
     - Series they love: {liked_str}
     - Genres they love: {liked_genres_str}
     - Summary of loved series: {liked_summaries_str}
+
+    And here is the recommendation text that the user has already written: {user.recommendation_text}
 
     Rules:
     1. Try to match the vibe of their 'love' list.
