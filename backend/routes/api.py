@@ -436,3 +436,44 @@ def search_series():
         "count": len(shows),
         "items": shows,
     }, HTTPStatus.OK.value
+
+@api_bp.route("/set_opinion", methods=["POST"])
+@login_required
+def set_opinion():
+    """
+    Set an opinion for a serie
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+    
+    data = request.get_json()
+    serie_id = data.get("serie_id")
+    opinion_value = data.get("opinion")
+
+    if not serie_id or not opinion_value:
+        return {"error": "Missing serie_id or opinion"}, HTTPStatus.BAD_REQUEST.value
+
+    try:
+        opinion_enum = OpinionType(opinion_value)
+    except ValueError:
+        return {"error": "Invalid opinion value"}, HTTPStatus.BAD_REQUEST.value
+
+    serie = Serie.get_by_id(serie_id)
+    if not serie:
+        return {"error": "Serie not found"}, HTTPStatus.NOT_FOUND.value
+
+    existing_opinion = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
+    
+    if existing_opinion:
+        existing_opinion.opinion = opinion_enum
+        existing_opinion.viewed = True
+    else:
+        new_opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=opinion_enum, viewed=True)
+        db.session.add(new_opinion)
+
+    db.session.commit()
+
+    return {"success": "Opinion saved"}, HTTPStatus.OK.value
