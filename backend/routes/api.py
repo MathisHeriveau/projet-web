@@ -233,6 +233,8 @@ def recommendation_text():
     - Genres they love: {liked_genres_str}
     - Summary of loved series: {liked_summaries_str}
 
+    And here is the recommendation text that the user has already written: {user.recommendation_text}
+
     Rules:
     1. Try to match the vibe of their 'love' list.
     2. Be as much precise as possible in your answer, do not be vague.
