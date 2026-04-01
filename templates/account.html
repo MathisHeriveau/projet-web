@@ -2,9 +2,47 @@
 
 {% block title %}Mon Profil{% endblock %}
 
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
+
 {% block content %}
-<section style="padding: 40px;">
-    <h1 class="text-primary">Mon profil</h1>
-    <p class="text-tertiary">Compte connecté : {{ g.user.username if g.user else session.get('user') }}</p>
+<section class="account-page">
+    <div class="account-bg">
+        <img src="{{ url_for('static', filename='images/gen_bg-genereted-by-chatgpt.png') }}" alt="Background">
+    </div>
+
+    <div class="account-title">
+        <span class="account-eyebrow">Compte • Recommandations</span>
+        <h2><span class="text-primary">Ajustez les recommandations</span></h2>
+        <p class="text-tertiary">Affinez les genres de séries que vous souhaitez découvrir ou éviter pour personnaliser vos recommandations.</p>
+    </div>
+
+    <div class="account-container">
+        <div class="account-info-card">
+            <i class="bi bi-stars" aria-hidden="true"></i>
+            <div>
+                <h3>Votre texte sert de boussole</h3>
+                <p class="text-tertiary">Décrivez l’ambiance, le rythme et les genres que vous voulez plus voir, ou au contraire éviter.</p>
+            </div>
+        </div>
+
+        <div class="account-preferences">
+            <label for="text-recommendation">Texte des recommandations</label>
+            <textarea
+                name="text-recommendation"
+                id="text-recommendation"
+                rows="5"
+                placeholder="Entrez vos préférences de genres, séries à éviter, ou tout autre détail pour affiner vos recommandations..."
+            ></textarea>
+            <div class="account-buttons">
+                <button class="account-primary-button" type="button">Enregistrer les préférences</button>
+                <button class="account-secondary-button" type="button">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    Régénérer les recommandations
+                </button>
+            </div>
+        </div>
+    </div>
 </section>
 {% endblock %}
