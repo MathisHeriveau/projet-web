@@ -8,7 +8,7 @@ from backend.enums.http_status import HTTPStatus
 from backend.enums.opinion_type import OpinionType
 from backend.extensions import db
 from backend.models import Opinion, User, Serie
-from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
+from backend.providers.tvmaze_api_provider import search_series_from_tvmaze
 from backend.routes.utils.api_utils import clean_summary, generate_recommendation_text_for_user, generate_recommendations_for_user, generate_user_genre_chart, get_current_user, split_genres
 from backend.routes.wrapper import login_required
 
@@ -52,16 +52,6 @@ def register():
     db.session.add(user)
     db.session.commit()
     return {"success": "account created", "redirect": url_for("web.index")}, HTTPStatus.CREATED.value
-
-
-@api_bp.route("/logout")
-@login_required
-def logout():
-    """
-    Logout
-    """
-    session.clear()
-    return {"success": "logged out", "redirect": url_for("web.login")}, HTTPStatus.OK.value
 
 
 @api_bp.route("/save_liked_series", methods=["POST"])
@@ -188,28 +178,6 @@ def recommendation():
     return {
         "success": "recommendations generated",
         "items": items,
-    }, HTTPStatus.OK.value
-
-
-@api_bp.route("/get_all_series")
-@login_required
-def get_all_series():
-    """
-    Fetch all shows from TVMaze.
-    """
-    format_value = (request.args.get("format") or "structured").lower()
-    raw = format_value == "raw"
-
-    try:
-        shows = get_all_series_from_tvmaze(raw=raw)
-    except Exception as error:
-        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
-
-    return {
-        "source": "tvmaze",
-        "format": "raw" if raw else "structured",
-        "count": len(shows),
-        "items": shows,
     }, HTTPStatus.OK.value
 
 
