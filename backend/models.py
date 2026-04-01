@@ -18,10 +18,6 @@ class Recommendation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     serie_id = db.Column(db.Integer, db.ForeignKey('serie.id'), nullable=False)
 
-    @classmethod
-    def get_by_user_id(cls, user_id):
-        return cls.query.filter_by(user_id=user_id).all()
-
 class Opinion(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -32,15 +28,11 @@ class Opinion(db.Model):
     @classmethod
     def get_by_user_id(cls, user_id):
         return cls.query.filter_by(user_id=user_id).all()
-    
-    @classmethod
-    def get_viewed_by_user_id(cls, user_id):
-        return cls.query.filter_by(user_id=user_id, viewed=True).all()
-    
+
     @classmethod
     def get_opinion_by_user_id_and_serie_id(cls, user_id, serie_id):
         return cls.query.filter_by(user_id=user_id, serie_id=serie_id).first()
-    
+
 class Serie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)

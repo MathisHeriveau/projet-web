@@ -558,8 +558,12 @@ function initRecommendationPage() {
     const id = String(item?.id ?? "").trim();
     const title = String(item?.title || item?.name || "Serie sans nom").trim();
     const genres = Array.isArray(item?.genres) ? item.genres.filter(Boolean) : [];
+    const rawPitch = String(item?.ai_pitch || "").trim();
     const rawSummary = String(item?.summary || "").trim();
     const image = item?.image?.medium || item?.image?.original || fallbackImage;
+
+    const pitchContainer = document.createElement("div");
+    pitchContainer.innerHTML = rawPitch;
 
     const summaryContainer = document.createElement("div");
     summaryContainer.innerHTML = rawSummary;
@@ -568,6 +572,7 @@ function initRecommendationPage() {
       id,
       title: title || "Serie sans nom",
       genres,
+      ai_pitch: pitchContainer.textContent?.trim() || rawPitch,
       summary: summaryContainer.textContent?.trim() || rawSummary,
       image,
     };
@@ -589,7 +594,7 @@ function initRecommendationPage() {
     const link = document.createElement("a");
     const title = document.createElement("h4");
     const genres = document.createElement("div");
-    const summary = document.createElement("p");
+    const pitch = document.createElement("p");
 
     card.className = "recommendation-card";
 
@@ -612,13 +617,13 @@ function initRecommendationPage() {
       genres.appendChild(badge);
     });
 
-    summary.className = "recommendation-card-summary text-tertiary";
-    summary.textContent =
-      truncateText(item.summary, 100) || "Resume indisponible pour cette serie.";
+    pitch.className = "recommendation-card-summary text-tertiary";
+    pitch.textContent =
+      truncateText(item.ai_pitch || item.summary, 100) || "Description indisponible pour cette serie.";
 
     content.appendChild(title);
     content.appendChild(genres);
-    content.appendChild(summary);
+    content.appendChild(pitch);
 
     card.appendChild(image);
     card.appendChild(content);

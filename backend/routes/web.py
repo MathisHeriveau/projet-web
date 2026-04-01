@@ -19,24 +19,9 @@ web_bp = Blueprint("web", __name__)
 AUTH_ENDPOINTS = {"web.login", "web.register"}
 FIRST_CONNECTION_ALLOWED_ENDPOINTS = AUTH_ENDPOINTS | {"web.gen_account", "web.logout"}
 
-
-def _show_name(show: dict) -> str:
-    return show.get("name") or "Serie inconnue"
-
-
-def _show_image(show: dict, fallback_image: str) -> str:
-    image = show.get("image") or {}
-    return image.get("original") or image.get("medium") or fallback_image
-
-
 def _show_year(show: dict) -> str:
     premiered = show.get("premiered") or ""
     return premiered[:4] if premiered else "Annee inconnue"
-
-
-def _show_genres(show: dict) -> str:
-    genres = show.get("genres") or []
-    return ", ".join(genres) if genres else "Genres inconnus"
 
 
 def _split_stored_genres(genres: str | None) -> list[str]:
@@ -241,6 +226,10 @@ def _home_context(user: User) -> dict[str, list]:
     }
 
 
+def _has_saved_recommendations(user: User) -> bool:
+    return Recommendation.query.filter_by(user_id=user.id).first() is not None
+
+
 def _series_context(serie_id: int, user: User) -> dict:
     placeholder_image = url_for("static", filename="images/no-image-blog.jpg")
     stored_serie = Serie.get_by_id(serie_id)
@@ -361,6 +350,7 @@ def _recommendation_context(user: User) -> dict[str, list | str]:
                 "title": serie.title,
                 "genres": _split_stored_genres(serie.genres),
                 "summary": serie.summary,
+                "ai_pitch": saved_recommendation.ai_pitch,
                 "image": {"medium": image_url},
             }
         )
@@ -410,6 +400,9 @@ def _guard_first_connection():
 def index():
     if _current_username() is None:
         return redirect(url_for("web.login"))
+
+    if not _has_saved_recommendations(g.user):
+        return redirect(url_for("web.recommendations"))
 
     return render_template("index.html", **_home_context(g.user))
 
@@ -488,8 +481,3 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("web.login"))
-
-
-@web_bp.route("/account", endpoint="legacy_account")
-def legacy_account():
-    return redirect(url_for("web.recommendations"))
