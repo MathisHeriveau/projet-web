@@ -3,7 +3,7 @@ import html
 import json
 import re
 
-from flask import Blueprint, request, session, url_for
+from flask import Blueprint, request, send_file, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from backend.enums.http_status import HTTPStatus
@@ -14,6 +14,13 @@ from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze, search_series_from_tvmaze
 from backend.routes.wrapper import login_required
 from google.genai import types 
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+from io import BytesIO
+from base64 import b64encode
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -557,3 +564,69 @@ def set_opinion():
     db.session.commit()
 
     return {"success": "Opinion saved"}, HTTPStatus.OK.value
+
+@api_bp.route("/gen_genre_chart")
+@login_required
+def gen_genre_chart():
+    """
+    Generate data for a genre distribution chart based on the user's opinions.
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+
+    user_opinions = Opinion.get_by_user_id(user.id)
+    
+    genre_counts = {}
+
+    for op in user_opinions:
+        serie = Serie.get_by_id(op.serie_id)
+        if serie:
+            genres = [g.strip() for g in serie.genres.split(",")]
+            for genre in genres:
+                if genre not in genre_counts:
+                    genre_counts[genre] = {"liked": 0, "disliked": 0}
+                if op.opinion == OpinionType.LIKED:
+                    genre_counts[genre]["liked"] += 1
+                elif op.opinion == OpinionType.DISLIKED:
+                    genre_counts[genre]["disliked"] += 1
+    
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
+    image_b64 = {}
+
+    if not genre_counts:
+        ax.text(0.5, 0.5, "No genre data available yet", ha='center', va='center')
+        ax.set_axis_off()
+    else:
+        genres = list(genre_counts.keys())
+        liked_counts = [genre_counts[g]["liked"] for g in genres]
+        disliked_counts = [genre_counts[g]["disliked"] for g in genres]
+
+        liked_counts += liked_counts[:1]
+        disliked_counts += disliked_counts[:1]
+        
+        angles = [n / float(len(genres)) * 2 * np.pi for n in range(len(genres))]
+        angles += angles[:1]
+
+        plt.xticks(angles[:-1], genres, color='black', size=11)
+        
+        ax.set_rlabel_position(0)
+        max_val = max(max(liked_counts), max(disliked_counts))
+        plt.yticks(range(1, max_val + 1), color="grey", size=8)
+        plt.ylim(0, max_val)
+
+        ax.plot(angles, liked_counts, color='#1f77b4', linewidth=2, linestyle='solid', label='Liked')
+        ax.fill(angles, liked_counts, color='#1f77b4', alpha=0.4)
+
+        ax.plot(angles, disliked_counts, color='#d62728', linewidth=2, linestyle='solid', label='Disliked')
+        ax.fill(angles, disliked_counts, color='#d62728', alpha=0.4)
+
+    img = BytesIO()
+    fig.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    image_b64['genre_chart'] = b64encode(img.getvalue()).decode('utf-8')
+    plt.close(fig)
+
+    return {"image_b64": image_b64}, HTTPStatus.OK.value
