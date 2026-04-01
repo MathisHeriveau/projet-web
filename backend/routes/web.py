@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from flask import Blueprint, g, redirect, render_template, request, session, url_for
 
-from backend.models import User
-from backend.providers.tvmaze_api_provider import get_all_series_from_tvmaze
+from backend.models import Recommendation, Serie, User
+from backend.providers.tvmaze_api_provider import (
+    get_all_series_from_tvmaze,
+    get_series_from_tvmaze_by_id,
+)
 
 web_bp = Blueprint("web", __name__)
 AUTH_ENDPOINTS = {"web.login", "web.register"}
@@ -17,17 +20,17 @@ HOME_LAST_VIEW_DISPLAY = [
     {
         "reaction": "liked",
         "reaction_icon": "bi-hand-thumbs-up-fill",
-        "reaction_label": "Aimee",
+        "reaction_label": "Aime",
     },
     {
         "reaction": "liked",
         "reaction_icon": "bi-hand-thumbs-up-fill",
-        "reaction_label": "Aimee",
+        "reaction_label": "Aime",
     },
     {
         "reaction": "neutral",
         "reaction_icon": "bi-dash-circle-fill",
-        "reaction_label": "Mitigee",
+        "reaction_label": "Neutre",
     },
 ]
 
@@ -36,19 +39,19 @@ HOME_LAST_NOTE_DISPLAY = [
         "timeline": "Notee il y a 2 jours",
         "reaction": "liked",
         "reaction_icon": "bi-hand-thumbs-up-fill",
-        "reaction_label": "Aimee",
+        "reaction_label": "Aime",
     },
     {
         "timeline": "Notee il y a 5 jours",
         "reaction": "neutral",
         "reaction_icon": "bi-dash-circle-fill",
-        "reaction_label": "Mitigee",
+        "reaction_label": "Neutre",
     },
     {
         "timeline": "Notee il y a 1 semaine",
         "reaction": "disliked",
         "reaction_icon": "bi-hand-thumbs-down-fill",
-        "reaction_label": "Pas aimee",
+        "reaction_label": "N'aime pas",
     },
 ]
 
@@ -167,6 +170,52 @@ def _home_context() -> dict[str, list]:
     }
 
 
+def _split_stored_genres(genres: str | None) -> list[str]:
+    return [genre.strip() for genre in str(genres or "").split(",") if genre.strip()]
+
+
+def _recommendation_context(user: User) -> dict[str, list | str]:
+    placeholder_image = url_for("static", filename="images/no-image-blog.jpg")
+    recommendations = []
+
+    saved_recommendations = (
+        Recommendation.query.filter_by(user_id=user.id)
+        .order_by(Recommendation.id.asc())
+        .all()
+    )
+
+    for saved_recommendation in saved_recommendations:
+        serie = Serie.get_by_id(saved_recommendation.serie_id)
+        if not serie:
+            continue
+
+        image_url = placeholder_image
+
+        try:
+            tvmaze_show = get_series_from_tvmaze_by_id(serie.id)
+        except Exception:
+            tvmaze_show = None
+
+        if tvmaze_show:
+            image = tvmaze_show.get("image") or {}
+            image_url = image.get("medium") or image.get("original") or placeholder_image
+
+        recommendations.append(
+            {
+                "id": serie.id,
+                "title": serie.title,
+                "genres": _split_stored_genres(serie.genres),
+                "summary": serie.summary,
+                "image": {"medium": image_url},
+            }
+        )
+
+    return {
+        "recommendation_text": user.recommendation_text or "",
+        "recommendation_items": recommendations,
+    }
+
+
 def _current_username() -> str | None:
     return session.get("user")
 
@@ -220,7 +269,7 @@ def recommendations():
     if _current_username() is None:
         return redirect(url_for("web.login"))
 
-    return render_template("recommendation.html")
+    return render_template("recommendation.html", **_recommendation_context(g.user))
 
 
 @web_bp.route("/gen_account")

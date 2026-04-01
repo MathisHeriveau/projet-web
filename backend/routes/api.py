@@ -1,5 +1,7 @@
 from __future__ import annotations
+import html
 import json
+import re
 
 from flask import Blueprint, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,6 +18,203 @@ from google.genai import types
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 gemini_provider = GeminiProvider()
+
+
+def _get_current_user():
+    current_username = session.get("user")
+    if not current_username:
+        return None
+    return User.get_by_username(current_username)
+
+
+def _split_genres(genres):
+    if isinstance(genres, list):
+        return [str(genre).strip() for genre in genres if str(genre).strip()]
+    return [genre.strip() for genre in str(genres or "").split(",") if genre.strip()]
+
+
+def _clean_summary(summary):
+    raw_summary = str(summary or "").strip()
+    if not raw_summary:
+        return ""
+
+    without_tags = re.sub(r"<[^>]+>", "", raw_summary)
+    return html.unescape(without_tags).strip()
+
+
+def _serialize_recommendation_item(show, ai_pitch=""):
+    image = show.get("image") or {}
+    image_url = image.get("medium") or image.get("original")
+
+    return {
+        "id": show.get("id"),
+        "title": str(show.get("title") or show.get("name") or "").strip(),
+        "genres": _split_genres(show.get("genres")),
+        "summary": _clean_summary(show.get("summary")),
+        "image": {"medium": image_url} if image_url else None,
+        "ai_pitch": str(ai_pitch or "").strip(),
+    }
+
+
+def _build_user_profile(user):
+    liked_titles = []
+    liked_genres = set()
+    liked_summaries = []
+    disliked_titles = []
+    disliked_genres = set()
+
+    for opinion in Opinion.get_by_user_id(user.id):
+        serie = Serie.get_by_id(opinion.serie_id)
+        if not serie:
+            continue
+
+        genres = _split_genres(serie.genres)
+        summary = _clean_summary(serie.summary)
+
+        if opinion.opinion == OpinionType.LIKED:
+            liked_titles.append(serie.title)
+            liked_genres.update(genres)
+            if summary:
+                liked_summaries.append(summary)
+        elif opinion.opinion == OpinionType.DISLIKED:
+            disliked_titles.append(serie.title)
+            disliked_genres.update(genres)
+
+    return {
+        "liked_titles": liked_titles,
+        "liked_genres": sorted(liked_genres),
+        "liked_summaries": liked_summaries,
+        "disliked_titles": disliked_titles,
+        "disliked_genres": sorted(disliked_genres),
+    }
+
+
+def _generate_recommendation_text_for_user(user):
+    profile = _build_user_profile(user)
+
+    liked_str = ", ".join(profile["liked_titles"]) if profile["liked_titles"] else "No liked series yet"
+    liked_genres_str = ", ".join(profile["liked_genres"]) if profile["liked_genres"] else "No liked genres yet"
+    liked_summaries_str = " ".join(profile["liked_summaries"]) if profile["liked_summaries"] else "No summaries available"
+
+    profile_context = f"""
+    You are an expert TV show recommender.
+    Here is the user's profile data:
+    - Series they love: {liked_str}
+    - Genres they love: {liked_genres_str}
+    - Summary of loved series: {liked_summaries_str}
+
+    Rules:
+    1. Try to match the vibe of their 'love' list.
+    2. Be as much precise as possible in your answer, do not be vague.
+    3. Return a text written in a natural, engaging style, in first person like if the user was describing their own taste, and in french.
+    """
+
+    config = types.GenerateContentConfig(
+        response_mime_type="text/plain",
+        temperature=0.7,
+        system_instruction=profile_context,
+    )
+
+    response = gemini_provider.client.models.generate_content(
+        model=gemini_provider.model_id,
+        contents="Based on my input data can you generate a text that describes my taste in series please?",
+        config=config,
+    )
+
+    return str(response.text or "").strip()
+
+
+def _generate_recommendations_for_user(user):
+    profile = _build_user_profile(user)
+
+    liked_str = ", ".join(profile["liked_titles"]) if profile["liked_titles"] else "No liked series yet"
+    liked_genres_str = ", ".join(profile["liked_genres"]) if profile["liked_genres"] else "No liked genres yet"
+    disliked_str = ", ".join(profile["disliked_titles"]) if profile["disliked_titles"] else "No disliked series yet"
+    disliked_genres_str = ", ".join(profile["disliked_genres"]) if profile["disliked_genres"] else "No disliked genres yet"
+
+    profile_context = f"""
+    You are an expert TV show recommender.
+    Here is the user's profile data:
+    - Series they love: {liked_str}
+    - Genres they love: {liked_genres_str}
+    - Series they dislike: {disliked_str}
+    - Genres they dislike: {disliked_genres_str}
+
+    And here is the recommendation text that the user has already written: {user.recommendation_text or ""}
+
+    Rules:
+    1. Never recommend anything in their 'dislike' list.
+    2. Try to match the vibe of their 'love' list.
+    3. Do not recommend series they already love (they already watched them).
+    4. Return exactly 10 recommendations.
+    5. Keep the official series title in its original language so it can be matched on TVMaze. Only the genres and pitch should be written in french.
+    """
+
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=gemini_provider.series_recommendation_schema,
+        temperature=0.7,
+        system_instruction=profile_context,
+    )
+
+    response = gemini_provider.client.models.generate_content(
+        model=gemini_provider.model_id,
+        contents="Based on my input data can you recommend me 10 series please?",
+        config=config,
+    )
+
+    gemini_data = json.loads(response.text or "{}")
+    recommended_series = gemini_data.get("series_list", [])
+    seen_ids = set()
+    items = []
+
+    for recommended_serie in recommended_series:
+        title = str(recommended_serie.get("title") or "").strip()
+        if not title:
+            continue
+
+        tvmaze_results = search_series_from_tvmaze(title, limit=1)
+        if not tvmaze_results:
+            continue
+
+        show = _serialize_recommendation_item(tvmaze_results[0], recommended_serie.get("pitch"))
+        if not show["id"] or show["id"] in seen_ids or not show["title"]:
+            continue
+
+        seen_ids.add(show["id"])
+        items.append(show)
+
+    for saved_recommendation in Recommendation.query.filter_by(user_id=user.id).all():
+        db.session.delete(saved_recommendation)
+
+    for item in items:
+        genres_str = ", ".join(item["genres"])
+        serie = Serie.get_by_id(item["id"])
+
+        if not serie:
+            serie = Serie(
+                id=item["id"],
+                title=item["title"],
+                genres=genres_str,
+                summary=item["summary"],
+            )
+            db.session.add(serie)
+            db.session.flush()
+        else:
+            serie.title = item["title"] or serie.title
+            serie.genres = genres_str or serie.genres
+            serie.summary = item["summary"] or serie.summary
+
+        db.session.add(
+            Recommendation(
+                ai_pitch=item["ai_pitch"],
+                user_id=user.id,
+                serie_id=serie.id,
+            )
+        )
+
+    db.session.commit()
+    return items
 
 
 @api_bp.route("/login", methods=["POST"])
@@ -148,27 +347,27 @@ def save_liked_series():
     """
     Save the user's liked series
     """
-    current_username = session.get("user")
-    user = User.get_by_username(current_username)
+    user = _get_current_user()
 
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
     
     data = request.get_json(silent=True) or {}
-    saved_count = 0
+    valid_count = 0
 
     for show in data.get("shows", []):
         id_serie = show.get("id")
         title = str(show.get("title") or "").strip()
-        genres = show.get("genres") or []
-        summary = str(show.get("summary") or "").strip()
+        genres = _split_genres(show.get("genres"))
+        summary = _clean_summary(show.get("summary"))
 
         if not id_serie or not title:
             continue
 
+        valid_count += 1
         serie = Serie.get_by_id(id_serie)
         if not serie:
-            genres_str = ", ".join(genres) if isinstance(genres, list) else str(genres)
+            genres_str = ", ".join(genres)
             serie = Serie(
                 id=id_serie,
                 title=title,
@@ -178,11 +377,7 @@ def save_liked_series():
             db.session.add(serie)
             db.session.flush()
         else:
-            if isinstance(genres, list):
-                serie.genres = (", ".join(genres) or serie.genres)
-            elif genres:
-                serie.genres = str(genres)
-
+            serie.genres = (", ".join(genres) or serie.genres)
             if summary:
                 serie.summary = summary
 
@@ -190,15 +385,25 @@ def save_liked_series():
         if not existing_op:
             opinion = Opinion(user_id=user.id, serie_id=serie.id, opinion=OpinionType.LIKED, viewed=True)
             db.session.add(opinion)
-            saved_count += 1
     
-    if saved_count == 0:
+    if valid_count == 0:
         return {"error": "No valid series were saved"}, HTTPStatus.BAD_REQUEST.value
 
     user.first_connection = False
+
+    try:
+        user.recommendation_text = _generate_recommendation_text_for_user(user)
+    except Exception:
+        if not user.recommendation_text:
+            user.recommendation_text = ""
+
     db.session.commit()
 
-    return {"success": "liked series saved", "redirect": url_for("web.recommendations")}, HTTPStatus.OK.value
+    return {
+        "success": "liked series saved",
+        "recommendation_text": user.recommendation_text or "",
+        "redirect": url_for("web.recommendations"),
+    }, HTTPStatus.OK.value
 
 @api_bp.route("/save_recommendation_text", methods=["POST"])
 @login_required
@@ -206,19 +411,18 @@ def save_recommendation_text():
     """
     Save the recommendation text
     """
-    current_username = session.get("user")
-    user = User.get_by_username(current_username)
+    user = _get_current_user()
 
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
     
-    data = request.get_json()
-    recommendation_text = data.get("recommendation_text", "")
+    data = request.get_json(silent=True) or {}
+    recommendation_text = str(data.get("recommendation_text") or "").strip()
     user.recommendation_text = recommendation_text
 
     db.session.commit()
     
-    return {"success": "recommendation text saved"}, HTTPStatus.OK.value
+    return {"success": "recommendation text saved", "text": user.recommendation_text}, HTTPStatus.OK.value
 
 
 @api_bp.route("/recommendation/text", methods=["GET"])
@@ -227,56 +431,17 @@ def recommendation_text():
     """
     Generate a recommendation text from Gemini based on the user's liked series
     """
-    current_username = session.get("user")
-    user = User.get_by_username(current_username)
+    user = _get_current_user()
 
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
 
-    user_opinions = Opinion.get_by_user_id(user.id)
+    try:
+        text = _generate_recommendation_text_for_user(user)
+    except Exception as error:
+        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
-    liked_list = []
-    liked_genres_set = set()
-    liked_summaries_list = []
-
-    for op in user_opinions:
-        if op.opinion == OpinionType.LIKED:
-            serie = Serie.get_by_id(op.serie_id)
-            if serie:
-                liked_list.append(serie.title)
-                liked_genres_set.update(serie.genres.split(", "))
-                liked_summaries_list.append(serie.summary)
-
-    liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
-    liked_genres_str = ", ".join(liked_genres_set) if liked_genres_set else "No liked genres yet"
-    liked_summaries_str = " ".join(liked_summaries_list) if liked_summaries_list else "No summaries available"
-
-    profile_context = f"""
-    You are an expert TV show recommender.
-    Here is the user's profile data:
-    - Series they love: {liked_str}
-    - Genres they love: {liked_genres_str}
-    - Summary of loved series: {liked_summaries_str}
-
-    Rules:
-    1. Try to match the vibe of their 'love' list.
-    2. Be as much precise as possible in your answer, do not be vague.
-    3. Return a text written in a natural, engaging style, in first person like if the user was describing their own taste, and in french.
-    """
-
-    config = types.GenerateContentConfig(
-        response_mime_type="application/json",
-        temperature=0.7,
-        system_instruction=profile_context,
-    )
-
-    response = gemini_provider.client.models.generate_content(
-        model=gemini_provider.model_id,
-        contents="Based on my input data can you generate a text that describes my taste in series please?",
-        config=config,
-    )
-
-    return {"success": response.text}, HTTPStatus.OK.value
+    return {"text": text}, HTTPStatus.OK.value
 
 
 @api_bp.route("/recommendation", methods=["GET"])
@@ -285,107 +450,22 @@ def recommendation():
     """
     Recommendation from Gemini
     """
-    current_username = session.get("user")
-    user = User.get_by_username(current_username)
+    user = _get_current_user()
 
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
 
-    user_opinions = Opinion.get_by_user_id(user.id)
-    
-    liked_list = []
-    liked_genres_set = set()
-    disliked_list = []
-    disliked_genres_set = set()
-
-    for op in user_opinions:
-        serie = Serie.get_by_id(op.serie_id)
-        if serie:
-            if op.opinion == OpinionType.LIKED:
-                liked_list.append(serie.title)
-                liked_genres_set.update(serie.genres.split(", "))
-            elif op.opinion == OpinionType.DISLIKED:
-                disliked_list.append(serie.title)
-                disliked_genres_set.update(serie.genres.split(", "))
-
-    liked_str = ", ".join(liked_list) if liked_list else "No liked series yet"
-    liked_genres_str = ", ".join(liked_genres_set) if liked_genres_set else "No liked genres yet"
-    disliked_str = ", ".join(disliked_list) if disliked_list else "No disliked series yet"
-    disliked_genres_str = ", ".join(disliked_genres_set) if disliked_genres_set else "No disliked genres yet"
-
-    profile_context = f"""
-    You are an expert TV show recommender.
-    Here is the user's profile data:
-    - Series they love: {liked_str}
-    - Genres they love: {liked_genres_str}
-    - Series they dislike: {disliked_str}
-    - Genres they dislike: {disliked_genres_str}
-
-    And here is the recommendation text that the user has already written: {user.recommendation_text}
-
-    Rules:
-    1. Never recommend anything in their 'dislike' list.
-    2. Try to match the vibe of their 'love' list.
-    3. Do not recommend series they already love (they already watched them).
-    4. Return exactly 10 recommendations.
-    5. The serie's name, genres and summary has to be written in french.
-    """
-
-    config = types.GenerateContentConfig(
-        response_mime_type="application/json",
-        response_schema=gemini_provider.series_recommendation_schema,
-        temperature=0.7,
-        system_instruction=profile_context,
-    )
-
-    response = gemini_provider.client.models.generate_content(
-        model=gemini_provider.model_id,
-        contents="Based on my input data can you recommend me 10 series please?",
-        config=config,
-    )
-
     try:
-        gemini_data = json.loads(response.text)
+        items = _generate_recommendations_for_user(user)
     except json.JSONDecodeError:
         return {"error": "Failed to parse Gemini response"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+    except Exception as error:
+        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
-    recommended_series = gemini_data.get("series_list", [])
-    enriched_recommendations = []
-
-    for series in recommended_series:
-        title = series.get("title")
-        if not title:
-            continue
-            
-        try:
-            tvmaze_results = search_series_from_tvmaze(title, limit=1)
-            if tvmaze_results:
-                real_show_data = tvmaze_results[0]
-                real_show_data["ai_pitch"] = series.get("pitch") 
-                enriched_recommendations.append(real_show_data)
-            else:
-                enriched_recommendations.append({
-                    "title": title,
-                    "ai_pitch": series.get("pitch"),
-                    "error": "Show not found on TVMaze"
-                })
-
-        except Exception as e:
-            print(f"TVMaze error for {title}: {e}")
-
-    for rec in enriched_recommendations:
-        serie = Serie.get_by_id(rec.get("id"))
-        if not serie:
-            serie = Serie(id=rec.get("id"), title=rec.get("name"), genres=", ".join(rec.get("genres", [])), summary=rec.get("summary", ""))
-            db.session.add(serie)
-            db.session.flush()
-
-        recommendation = Recommendation(ai_pitch=rec.get("ai_pitch"), user_id=user.id, serie_id=serie.id)
-        db.session.add(recommendation)
-
-    db.session.commit()
-
-    return {'success': 'recommedations generated'}, HTTPStatus.OK.value
+    return {
+        "success": "recommendations generated",
+        "items": items,
+    }, HTTPStatus.OK.value
 
 
 @api_bp.route("/get_all_series")
