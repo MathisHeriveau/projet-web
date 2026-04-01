@@ -175,6 +175,26 @@ def save_liked_series():
     db.session.commit()
     return {"success": "liked series saved"}, HTTPStatus.OK.value
 
+@api_bp.route("/save_recommendation_text", methods=["POST"])
+@login_required
+def save_recommendation_text():
+    """
+    Save the recommendation text
+    """
+    current_username = session.get("user")
+    user = User.get_by_username(current_username)
+
+    if not user:
+        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+    
+    data = request.get_json()
+    recommendation_text = data.get("recommendation_text", "")
+    user.recommendation_text = recommendation_text
+
+    db.session.commit()
+    
+    return {"success": "recommendation text saved"}, HTTPStatus.OK.value
+
 
 @api_bp.route("/recommendation/text", methods=["GET"])
 @login_required
