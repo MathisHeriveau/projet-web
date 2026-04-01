@@ -51,7 +51,32 @@
             </div>
             <script id="recommendation-initial-items" type="application/json">{{ recommendation_items|tojson }}</script>
             <p id="recommendation-empty" class="recommendation-empty text-tertiary"{% if recommendation_items %} hidden{% endif %}>Aucune recommandation enregistrée pour le moment.</p>
-            <div id="recommendation-card-list" class="recommendation-card-list"></div>
+            <div id="recommendation-card-list" class="recommendation-card-list">
+                {% for item in recommendation_items %}
+                <article class="recommendation-card">
+                    <img
+                        class="recommendation-card-image"
+                        src="{{ item.image.medium if item.image else url_for('static', filename='images/no-image-blog.jpg') }}"
+                        alt="{{ item.title }}"
+                    >
+                    <div class="recommendation-card-content">
+                        <h4>{{ item.title }}</h4>
+                        <div class="recommendation-card-genres">
+                            {% for genre in item.genres[:2] %}
+                            <span class="recommendation-card-genre">{{ genre }}</span>
+                            {% endfor %}
+                            {% if not item.genres %}
+                            <span class="recommendation-card-genre">Genres indisponibles</span>
+                            {% endif %}
+                        </div>
+                        <p class="recommendation-card-summary text-tertiary">
+                            {{ (item.ai_pitch or item.summary or "Description indisponible pour cette serie.")|striptags|truncate(100, True, '...') }}
+                        </p>
+                    </div>
+                    <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=item.id) }}" aria-label="Voir la fiche de {{ item.title }}"></a>
+                </article>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </section>
