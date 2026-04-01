@@ -6,7 +6,7 @@
   padding: 40px;
 }
 
-.gen-bg {
+.gen-account-background {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -14,7 +14,7 @@
   min-height: 100vh;
 }
 
-.gen-bg img {
+.gen-account-background img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -89,7 +89,7 @@
   text-align: left;
 }
 
-.gen-account-gemini-title .gemini-logo {
+.gen-account-gemini-logo {
   width: 45px; 
   height: 45px;
 }
@@ -238,7 +238,7 @@
   filter: brightness(0.8) saturate(1.05);
 }
 
-.gen-account-card-item .name {
+.gen-account-card-item-title {
   padding: 14px;
   font-weight: 700;
   color: var(--text-primary);

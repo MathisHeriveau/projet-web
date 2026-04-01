@@ -17,23 +17,23 @@ function waitForNextPaint() {
 }
 
 function initCarousel() {
-  const items = document.querySelectorAll(".carrousel-item");
+  const items = document.querySelectorAll(".home-carousel-slide");
   if (!items.length) {
     return;
   }
 
-  const prevButtons = document.querySelectorAll(".carrousel-control.prev");
-  const nextButtons = document.querySelectorAll(".carrousel-control.next");
-  const bullets = document.querySelectorAll(".bullet span");
+  const prevButtons = document.querySelectorAll(".home-carousel-control-prev");
+  const nextButtons = document.querySelectorAll(".home-carousel-control-next");
+  const bullets = document.querySelectorAll(".home-carousel-bullets span");
   let currentIndex = 0;
 
   function renderCarousel() {
     items.forEach((item, index) => {
-      item.classList.toggle("active", index === currentIndex);
+      item.classList.toggle("is-active", index === currentIndex);
     });
 
     bullets.forEach((bullet, index) => {
-      bullet.classList.toggle("active", index === currentIndex);
+      bullet.classList.toggle("is-active", index === currentIndex);
     });
   }
 
