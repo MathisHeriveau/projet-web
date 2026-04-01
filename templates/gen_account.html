@@ -8,7 +8,7 @@
 
 {% block content %}
 <section class="gen-account-page">
-    <div class="gen-bg"><img src="{{ url_for('static', filename='images/gen_bg-genereted-by-chatgpt.png') }}" alt="Background"></div>
+    <div class="gen-account-background"><img src="{{ url_for('static', filename='images/gen_bg-genereted-by-chatgpt.png') }}" alt="Background"></div>
 
 
     <div class="gen-account-title">
@@ -17,7 +17,7 @@
     </div>
     <div class="gen-account-gemini">
         <div class="gen-account-gemini-title">
-            <img src="{{ url_for('static', filename='images/gemini-color.png') }}" alt="Google Gemini Logo" class="gemini-logo">
+            <img src="{{ url_for('static', filename='images/gemini-color.png') }}" alt="Google Gemini Logo" class="gen-account-gemini-logo">
             <h3 class="text-primary">Généré par Gemini</h3>
         </div>
         <p class="text-tertiary">5 séries ou plus sélectionnées seront envoyées à Gemini, notre IA avancée, pour qu’elle personnalise les genres de séries à recommander et à éviter, que vous pourrez ajuster ensuite.</p>
@@ -62,7 +62,7 @@
                     {% for show in shows %}
                         <div class="gen-account-card-item" data-show-id="{{ show.id if show.id is not none else show.name }}">
                             <img src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg') }}" alt="{{ show.name }}">
-                            <div class="name">{{ show.name }}</div>
+                            <div class="gen-account-card-item-title">{{ show.name }}</div>
                         </div>
                     {% endfor %}
                 {% else %}

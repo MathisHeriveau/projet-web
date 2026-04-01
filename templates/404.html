@@ -2,9 +2,36 @@
 
 {% block title %}404{% endblock %}
 
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/404.css') }}">
+{% endblock %}
+
 {% block content %}
-<main>
-    <h1>Page introuvable</h1>
-    <p><a href="{{ url_for('web.index') }}">Retour accueil</a></p>
-</main>
+<section class="not-found-page">
+    <div class="not-found-shell">
+        <div class="not-found-copy">
+            <div class="not-found-kicker">Erreur 404</div>
+            <h1>Cette page s'est perdue entre deux séries.</h1>
+            <p class="text-tertiary">
+                L'URL demandée n'existe pas, a été déplacée, ou n'est plus disponible.
+                On peut vous remettre rapidement sur les rails.
+            </p>
+            <div class="not-found-actions">
+                {% set is_first_connection = g.user and g.user.first_connection %}
+                {% if session.get('user') and not is_first_connection %}
+                <a class="not-found-button not-found-button-primary" href="{{ url_for('web.index') }}">
+                    Retour à l'accueil
+                </a>
+                {% else %}
+                <a class="not-found-button not-found-button-primary" href="{{ url_for('web.login') }}">
+                    Aller à la connexion
+                </a>
+                <a class="not-found-button not-found-button-secondary" href="{{ url_for('web.register') }}">
+                    Créer un compte
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
