@@ -198,7 +198,7 @@ def save_liked_series():
     user.first_connection = False
     db.session.commit()
 
-    return {"success": "liked series saved", "redirect": url_for("web.account")}, HTTPStatus.OK.value
+    return {"success": "liked series saved", "redirect": url_for("web.recommendations")}, HTTPStatus.OK.value
 
 @api_bp.route("/save_recommendation_text", methods=["POST"])
 @login_required

@@ -217,7 +217,10 @@ def series():
 
 @web_bp.route("/recommendations")
 def recommendations():
-    return redirect(url_for("web.index"))
+    if _current_username() is None:
+        return redirect(url_for("web.login"))
+
+    return render_template("recommendation.html")
 
 
 @web_bp.route("/gen_account")
@@ -252,9 +255,6 @@ def logout():
     return redirect(url_for("web.login"))
 
 
-@web_bp.route("/account")
-def account():
-    if _current_username() is None:
-        return redirect(url_for("web.login"))
-
-    return render_template("account.html")
+@web_bp.route("/account", endpoint="legacy_account")
+def legacy_account():
+    return redirect(url_for("web.recommendations"))
