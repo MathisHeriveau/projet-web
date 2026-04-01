@@ -15,10 +15,12 @@
             <p>Obtenez des recommandations personnalisées basées sur ce que vous avez vu ou aimé.</p>
         </div>
         <div class="right-home">
+            {% if recommendation_shows %}
             <div class="carrousel">
-                {% for show in featured_shows %}
+                {% for show in recommendation_shows %}
                 <div class="carrousel-item {% if loop.first %}active{% endif %}">
                     <img src="{{ show.image }}" alt="{{ show.name }}">
+                    <a class="carrousel-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
                     <i class="bi bi-chevron-left carrousel-control prev" aria-label="Précédent"></i>
                     <i class="bi bi-chevron-right carrousel-control next" aria-label="Suivant"></i>
                     <div class="carrousel-item-title">
@@ -28,20 +30,20 @@
                     <div class="info">
                         <div class="year">{{ show.year }}</div>
                         <div class="category">{{ show.genres }}</div>
-                        <div class="nb-saison">{{ show.meta }}</div>
                     </div>
-
-                    <button class="play-button" aria-label="Lire la série">
-                        <i class="bi bi-play-fill" aria-hidden="true"></i>
-                    </button>
                 </div>
                 {% endfor %}
                 <div class="bullet">
-                    {% for show in featured_shows %}
+                    {% for show in recommendation_shows %}
                     <span class="{% if loop.first %}active{% endif %}" aria-label="{{ show.name }}"></span>
                     {% endfor %}
                 </div>
             </div>
+            {% else %}
+            <div class="home-empty">
+                <p class="text-tertiary">Aucune recommandation disponible pour le moment.</p>
+            </div>
+            {% endif %}
         </div>
 
     </section>
@@ -49,10 +51,11 @@
     <section class="last-view">
         <div class="last-view-layout">
             <div class="last-view-column">
-                <div class="title">Series que vous avez vues</div>
+                <div class="title">Dernières séries vues</div>
                 <div class="last-view-container">
                     {% for show in last_view_shows %}
                     <div class="last-view-item">
+                        <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
                         <img src="{{ show.image }}" alt="{{ show.name }}">
                         <div class="name">{{ show.name }}</div>
                         <div class="{{ show.reaction }}">
@@ -61,25 +64,47 @@
                         </div>
                     </div>
                     {% endfor %}
+                    {% if not last_view_shows %}
+                    <p class="index-empty text-tertiary">Aucune série vue pour le moment.</p>
+                    {% endif %}
                 </div>
             </div>
 
             <div class="last-note">
-                <div class="title">Vos dernières notes</div>
+                <div class="title">Dernières notes</div>
                 <div class="last-note-container">
                     {% for show in last_note_shows %}
                     <div class="last-note-item">
+                        <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
                         <img src="{{ show.image }}" alt="{{ show.name }}">
                         <div class="name">{{ show.name }}</div>
-                        <div class="timeline">{{ show.timeline }}</div>
                         <div class="{{ show.reaction }}">
                             <i class="bi {{ show.reaction_icon }}" aria-label="{{ show.reaction_label }}"></i>
                             <span>{{ show.reaction_label }}</span>
                         </div>
                     </div>
                     {% endfor %}
+                    {% if not last_note_shows %}
+                    <p class="index-empty text-tertiary">Aucune note enregistrée pour le moment.</p>
+                    {% endif %}
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="random-shows">
+        <div class="title">Séries au hasard</div>
+        <div class="random-shows-container">
+            {% for show in random_shows %}
+            <div class="random-show-item">
+                <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
+                <img src="{{ show.image }}" alt="{{ show.name }}">
+                <div class="name">{{ show.name }}</div>
+            </div>
+            {% endfor %}
+            {% if not random_shows %}
+            <p class="index-empty text-tertiary">Aucune série aléatoire disponible pour le moment.</p>
+            {% endif %}
         </div>
     </section>
 </div>

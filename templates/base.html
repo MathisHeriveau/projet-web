@@ -4,28 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}GenFlix{% endblock %}</title>
-    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}?v=3">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/logo.jpg') }}?v=3">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.jpg') }}?v=3">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icon-genereted-by-chatgpt.png') }}?v=4">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/icon-genereted-by-chatgpt.png') }}?v=4">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-genereted-by-chatgpt.png') }}?v=4">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block page_css %}{% endblock %}
 </head>
 <body>
     <header>
-        <div class="app-name"><span class="text-primary">Gen</span><span class="text-secondary">Flix</span></div>
+        <a class="app-name" href="{{ url_for('web.index') }}" aria-label="Retour à l'accueil">
+            <span class="text-primary">Gen</span><span class="text-secondary">Flix</span>
+        </a>
         <nav>
             {% set is_first_connection = g.user and g.user.first_connection %}
             {% if session.get('user') %}
             {% if not is_first_connection %}
             <a href="{{ url_for('web.index') }}">Accueil</a>
             <a href="{{ url_for('web.recommendations') }}">Recommandations</a>
-            <div class="search-bar">
-                <button type="button" aria-label="Rechercher">
+            <form class="search-bar" action="{{ url_for('web.search') }}" method="get">
+                <button type="submit" aria-label="Rechercher">
                     <i class="bi bi-search" aria-hidden="true"></i>
                 </button>
-                <input type="text" placeholder="Rechercher une série...">
-            </div>
+                <input
+                    type="search"
+                    name="q"
+                    placeholder="Rechercher une série..."
+                    value="{{ request.args.get('q', '') if request.endpoint == 'web.search' else '' }}"
+                >
+            </form>
             {% endif %}
             <a class="logout-button" href="{{ url_for('web.logout') }}" aria-label="Déconnexion" title="Déconnexion">
                 <i class="bi bi-box-arrow-right" aria-hidden="true"></i>

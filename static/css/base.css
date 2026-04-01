@@ -36,6 +36,11 @@ body {
   color: var(--text-primary);
 }
 
+body.is-waiting,
+body.is-waiting * {
+  cursor: wait !important;
+}
+
 img {
   display: block;
   max-width: 100%;
@@ -97,6 +102,11 @@ header {
 .app-name {
   font-size: 1.5em;
   font-weight: bold;
+  cursor: pointer;
+}
+
+.app-name::after {
+  display: none;
 }
 
 nav {
@@ -156,4 +166,60 @@ nav {
   background: var(--status-disliked-background);
   border-color: var(--status-disliked-border);
   transform: translateY(-1px);
+}
+
+.liked,
+.neutral,
+.disliked,
+.viewed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 14px 14px;
+  padding: 0.45rem 0.78rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.liked {
+  color: var(--status-liked-text);
+  background: var(--status-liked-background);
+  border-color: var(--status-liked-border);
+}
+
+.neutral {
+  color: var(--status-neutral-text);
+  background: var(--status-neutral-background);
+  border-color: var(--status-neutral-border);
+}
+
+.disliked {
+  color: var(--status-disliked-text);
+  background: var(--status-disliked-background);
+  border-color: var(--status-disliked-border);
+}
+
+.viewed {
+  color: var(--status-neutral-text);
+  background: var(--status-neutral-background);
+  border-color: var(--status-neutral-border);
+}
+
+.card-cover-link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  border-radius: inherit;
+}
+
+.card-cover-link::after {
+  display: none;
+}
+
+.card-cover-link:focus-visible {
+  outline: 2px solid var(--text-secondary);
+  outline-offset: -2px;
 }

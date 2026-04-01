@@ -191,14 +191,14 @@
 
 .recommendation-card-list {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 18px;
 }
 
 .recommendation-card {
     position: relative;
     display: flex;
-    min-height: 420px;
+    min-height: 340px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     border-radius: 18px;
@@ -211,7 +211,8 @@
     background: linear-gradient(
         180deg,
         transparent 0%,
-        var(--background-surface) 34%,
+        transparent 42%,
+        var(--background-surface) 78%,
         var(--background-color) 100%
     );
 }

@@ -26,7 +26,7 @@ class Opinion(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     serie_id = db.Column(db.Integer, db.ForeignKey('serie.id'), nullable=False)
-    opinion = db.Column(db.Enum(OpinionType), nullable=False)
+    opinion = db.Column(db.Enum(OpinionType), nullable=True)
     viewed = db.Column(db.Boolean, nullable=False)
 
     @classmethod
