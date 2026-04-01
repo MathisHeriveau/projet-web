@@ -428,6 +428,198 @@ function initGenAccount() {
 
 /*
 |--------------------------------------------------------------------------
+| RECOMMANDATIONS
+|--------------------------------------------------------------------------
+| Gère la page recommandations :
+| - affichage du texte déjà sauvegardé
+| - régénération du texte via l'API
+| - sauvegarde du texte puis génération des séries IA
+| - affichage des dernières recommandations déjà enregistrées
+*/
+function initRecommendationPage() {
+  const page = document.querySelector(".recommendation-page");
+  if (!page) {
+    return;
+  }
+
+  const textArea = document.querySelector("#text-recommendation");
+  const regenerateButton = document.querySelector("#recommendation-regenerate-button");
+  const acceptButton = document.querySelector("#recommendation-accept-button");
+  const message = document.querySelector("#recommendation-message");
+  const list = document.querySelector("#recommendation-card-list");
+  const empty = document.querySelector("#recommendation-empty");
+  const initialItemsScript = document.querySelector("#recommendation-initial-items");
+  const fallbackImage = "/static/images/no-image-blog.jpg";
+
+  let initialItems = [];
+
+  if (initialItemsScript) {
+    try {
+      initialItems = JSON.parse(initialItemsScript.textContent || "[]");
+    } catch (_error) {
+      initialItems = [];
+    }
+  }
+
+  function setMessage(text, type = "") {
+    if (!message) {
+      return;
+    }
+
+    message.textContent = text;
+    message.classList.remove("success", "error");
+
+    if (type) {
+      message.classList.add(type);
+    }
+  }
+
+  function setButtonsDisabled(disabled) {
+    if (regenerateButton) {
+      regenerateButton.disabled = disabled;
+    }
+
+    if (acceptButton) {
+      acceptButton.disabled = disabled;
+    }
+  }
+
+  function normalizeRecommendation(item) {
+    const id = String(item?.id ?? "").trim();
+    const title = String(item?.title || item?.name || "Serie sans nom").trim();
+    const rawSummary = String(item?.summary || "").trim();
+    const image = item?.image?.medium || item?.image?.original || fallbackImage;
+
+    const summaryContainer = document.createElement("div");
+    summaryContainer.innerHTML = rawSummary;
+
+    return {
+      id,
+      title: title || "Serie sans nom",
+      summary: summaryContainer.textContent?.trim() || rawSummary,
+      image,
+    };
+  }
+
+  function truncateText(text, maxLength) {
+    const normalizedText = String(text || "").trim();
+    if (normalizedText.length <= maxLength) {
+      return normalizedText;
+    }
+
+    return `${normalizedText.slice(0, maxLength).trim()}...`;
+  }
+
+  function createRecommendationCard(item) {
+    const card = document.createElement("article");
+    const image = document.createElement("img");
+    const content = document.createElement("div");
+    const title = document.createElement("h4");
+    const summary = document.createElement("p");
+
+    card.className = "recommendation-card";
+
+    image.className = "recommendation-card-image";
+    image.src = item.image;
+    image.alt = item.title;
+
+    content.className = "recommendation-card-content";
+
+    title.textContent = item.title;
+
+    summary.className = "recommendation-card-summary text-tertiary";
+    summary.textContent =
+      truncateText(item.summary, 250) || "Resume indisponible pour cette serie.";
+
+    content.appendChild(title);
+    content.appendChild(summary);
+
+    card.appendChild(image);
+    card.appendChild(content);
+    return card;
+  }
+
+  function renderRecommendations(items) {
+    if (!list || !empty) {
+      return;
+    }
+
+    const normalizedItems = items.map(normalizeRecommendation).filter((item) => item.id && item.title);
+    list.innerHTML = "";
+
+    if (!normalizedItems.length) {
+      empty.hidden = false;
+      return;
+    }
+
+    empty.hidden = true;
+    normalizedItems.forEach((item) => {
+      list.appendChild(createRecommendationCard(item));
+    });
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erreur.");
+    }
+
+    return data;
+  }
+
+  if (regenerateButton) {
+    regenerateButton.addEventListener("click", async () => {
+      setButtonsDisabled(true);
+      setMessage("Regeneration du texte en cours...");
+
+      try {
+        const data = await fetchJson(page.dataset.generateTextUrl);
+        if (textArea) {
+          textArea.value = data.text || "";
+        }
+        setMessage("Le texte de recommandations a ete regenere.", "success");
+      } catch (error) {
+        setMessage(error.message || "Erreur lors de la regeneration du texte.", "error");
+      } finally {
+        setButtonsDisabled(false);
+      }
+    });
+  }
+
+  if (acceptButton) {
+    acceptButton.addEventListener("click", async () => {
+      setButtonsDisabled(true);
+      setMessage("Sauvegarde du texte et generation des recommandations...");
+
+      try {
+        await fetchJson(page.dataset.saveTextUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recommendation_text: textArea ? textArea.value : "",
+          }),
+        });
+
+        const data = await fetchJson(page.dataset.generateSeriesUrl);
+        renderRecommendations(data.items || []);
+        setMessage("Les recommandations ont ete mises a jour.", "success");
+      } catch (error) {
+        setMessage(error.message || "Erreur lors de la sauvegarde des recommandations.", "error");
+      } finally {
+        setButtonsDisabled(false);
+      }
+    });
+  }
+
+  renderRecommendations(initialItems);
+}
+
+/*
+|--------------------------------------------------------------------------
 | INITIALISATION GLOBALE
 |--------------------------------------------------------------------------
 | Chaque bloc s'active seulement si les éléments de la page existent.
@@ -435,3 +627,4 @@ function initGenAccount() {
 initCarousel();
 initAuthForm();
 initGenAccount();
+initRecommendationPage();

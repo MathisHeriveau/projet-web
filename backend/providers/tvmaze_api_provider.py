@@ -21,7 +21,7 @@ def _read_tvmaze_payload(url):
         with urlopen(url) as response:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as error:
-        if error.code == 404:
+        if error.code == HTTPError.HTTP_NOT_FOUND:
             return []
         raise Exception(f"Erreur TVMaze: {error.code}") from error
     except URLError as error:
@@ -64,3 +64,16 @@ def search_series_from_tvmaze(query, limit=None):
         return shows[:limit]
 
     return shows
+
+
+def get_series_from_tvmaze_by_id(show_id):
+    if show_id is None:
+        return None
+
+    url = f"{TVMAZE_BASE_URL}/shows/{show_id}"
+    show = _read_tvmaze_payload(url)
+
+    if not show:
+        return None
+
+    return _serialize_show(show)
