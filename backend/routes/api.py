@@ -2,6 +2,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from textwrap import wrap
 
 from flask import Blueprint, request, send_file, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -20,7 +21,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
-from base64 import b64encode
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -571,8 +571,7 @@ def gen_genre_chart():
     """
     Generate data for a genre distribution chart based on the user's opinions.
     """
-    current_username = session.get("user")
-    user = User.get_by_username(current_username)
+    user = _get_current_user()
 
     if not user:
         return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
@@ -592,15 +591,45 @@ def gen_genre_chart():
                     genre_counts[genre]["liked"] += 1
                 elif op.opinion == OpinionType.DISLIKED:
                     genre_counts[genre]["disliked"] += 1
-    
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
-    image_b64 = {}
+
+    theme_background = "#030910"
+    theme_surface = "#101c27"
+    theme_border = "#192d3f"
+    theme_text = "#ffffff"
+    theme_muted = "#9da2a5"
+    liked_color = "#b81e21"
+    disliked_color = "#ff7a7d"
+
+    fig, ax = plt.subplots(
+        figsize=(8.2, 8.2),
+        subplot_kw=dict(polar=True),
+        facecolor=theme_background,
+    )
+    fig.patch.set_facecolor(theme_background)
+    ax.set_facecolor(theme_surface)
+    ax.spines["polar"].set_color(theme_border)
+    ax.spines["polar"].set_linewidth(1.1)
 
     if not genre_counts:
-        ax.text(0.5, 0.5, "No genre data available yet", ha='center', va='center')
+        ax.text(
+            0.5,
+            0.5,
+            "Aucune donnee de genre disponible",
+            ha="center",
+            va="center",
+            color=theme_text,
+            fontsize=14,
+            transform=ax.transAxes,
+        )
         ax.set_axis_off()
     else:
-        genres = list(genre_counts.keys())
+        sorted_genres = sorted(
+            genre_counts.items(),
+            key=lambda item: item[1]["liked"] + item[1]["disliked"],
+            reverse=True,
+        )
+
+        genres = [genre for genre, _counts in sorted_genres]
         liked_counts = [genre_counts[g]["liked"] for g in genres]
         disliked_counts = [genre_counts[g]["disliked"] for g in genres]
 
@@ -610,23 +639,79 @@ def gen_genre_chart():
         angles = [n / float(len(genres)) * 2 * np.pi for n in range(len(genres))]
         angles += angles[:1]
 
-        plt.xticks(angles[:-1], genres, color='black', size=11)
-        
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels([])
+
         ax.set_rlabel_position(0)
         max_val = max(max(liked_counts), max(disliked_counts))
-        plt.yticks(range(1, max_val + 1), color="grey", size=8)
-        plt.ylim(0, max_val)
+        label_radius = max_val + max(1.3, max_val * 0.42)
+        ax.set_ylim(0, label_radius)
+        ax.set_yticks(range(1, max_val + 1))
+        ax.set_yticklabels(
+            [str(value) for value in range(1, max_val + 1)],
+            color=theme_muted,
+            fontsize=8,
+        )
+        ax.tick_params(pad=6)
+        ax.yaxis.grid(True, color=theme_border, alpha=0.75, linewidth=0.8)
+        ax.xaxis.grid(True, color=theme_border, alpha=0.45, linewidth=0.8)
 
-        ax.plot(angles, liked_counts, color='#1f77b4', linewidth=2, linestyle='solid', label='Liked')
-        ax.fill(angles, liked_counts, color='#1f77b4', alpha=0.4)
+        for angle, genre in zip(angles[:-1], genres):
+            angle_degrees = np.degrees(angle)
+            wrapped_genre = "\n".join(wrap(genre, 14))
 
-        ax.plot(angles, disliked_counts, color='#d62728', linewidth=2, linestyle='solid', label='Disliked')
-        ax.fill(angles, disliked_counts, color='#d62728', alpha=0.4)
+            if 80 <= angle_degrees <= 100 or 260 <= angle_degrees <= 280:
+                horizontal_alignment = "center"
+            elif 90 < angle_degrees < 270:
+                horizontal_alignment = "right"
+            else:
+                horizontal_alignment = "left"
+
+            ax.text(
+                angle,
+                label_radius,
+                wrapped_genre,
+                color=theme_text,
+                fontsize=10.5,
+                fontweight="semibold",
+                ha=horizontal_alignment,
+                va="center",
+                clip_on=False,
+                bbox={
+                    "boxstyle": "round,pad=0.26",
+                    "facecolor": theme_background,
+                    "edgecolor": theme_border,
+                    "linewidth": 0.9,
+                },
+            )
+
+        ax.plot(
+            angles,
+            liked_counts,
+            color=liked_color,
+            linewidth=2.6,
+            linestyle="solid",
+        )
+        ax.fill(angles, liked_counts, color=liked_color, alpha=0.28)
+
+        ax.plot(
+            angles,
+            disliked_counts,
+            color=disliked_color,
+            linewidth=2.2,
+            linestyle="solid",
+        )
+        ax.fill(angles, disliked_counts, color=disliked_color, alpha=0.14)
 
     img = BytesIO()
-    fig.savefig(img, format='png', bbox_inches='tight')
+    fig.savefig(
+        img,
+        format="png",
+        bbox_inches="tight",
+        pad_inches=0.4,
+        facecolor=fig.get_facecolor(),
+    )
     img.seek(0)
-    image_b64['genre_chart'] = b64encode(img.getvalue()).decode('utf-8')
     plt.close(fig)
 
-    return {"image_b64": image_b64}, HTTPStatus.OK.value
+    return send_file(img, mimetype="image/png")

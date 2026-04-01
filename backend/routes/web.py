@@ -259,11 +259,6 @@ def index():
     return render_template("index.html", **_home_context())
 
 
-@web_bp.route("/series")
-def series():
-    return redirect(url_for("web.index"))
-
-
 @web_bp.route("/recommendations")
 def recommendations():
     if _current_username() is None:

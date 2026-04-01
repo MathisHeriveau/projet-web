@@ -4,3 +4,4 @@ flask_sqlalchemy
 flask_session
 google-genai
 python-dotenv
+matplotlib
