@@ -6,17 +6,17 @@ class GeminiProvider:
     def __init__(self):
         load_dotenv()
         self.GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-        self.model_id = "gemini-2.5-flash-lite"
-        # self.model_id = "gemini-2.5-flash"
+        # self.model_id = "gemini-2.5-flash-lite"
+        self.model_id = "gemini-2.5-flash"
         self.client = genai.Client(api_key=self.GEMINI_KEY)
         self.series_recommendation_schema = {
             "type": "object",
             "properties": {
                 "series_list": {
                     "type": "array",
-                    "description": "A list of exactly 10 different TV series recommendations.",
-                    "minItems": 10,
-                    "maxItems": 10,
+                    "description": "A list of exactly 12 different TV series recommendations.",
+                    "minItems": 12,
+                    "maxItems": 12,
                     "items": {
                         "type": "object",
                         "properties": {

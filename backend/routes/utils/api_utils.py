@@ -161,7 +161,7 @@ def generate_recommendations_for_user(user):
     1. Never recommend anything in their 'dislike' list.
     2. Try to match the vibe of their 'love' list.
     3. Do not recommend series they already love (they already watched them).
-    4. Return exactly 10 recommendations.
+    4. Return exactly 12 recommendations.
     5. For each recommendation, provide a short explanation of why you recommended it, based on the user's profile and recommendation text.
     6. Keep the official series title in its original language so it can be matched on TVMaze. Only the genres and pitch should be written in french.
     """
@@ -173,7 +173,7 @@ def generate_recommendations_for_user(user):
     )
     response = gemini_provider.client.models.generate_content(
         model=gemini_provider.model_id,
-        contents="Based on my input data can you recommend me 10 series please?",
+        contents="Based on my input data can you recommend me 12 series please?",
         config=config,
     )
     gemini_data = json.loads(response.text or "{}")
@@ -185,7 +185,7 @@ def generate_recommendations_for_user(user):
         for recommended_serie in recommended_series
         if str(recommended_serie.get("title") or "").strip()
     ]
-    max_workers = min(10, len(recommended_series))
+    max_workers = min(12, len(recommended_series))
     resolved_shows = []
     if max_workers > 0:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
