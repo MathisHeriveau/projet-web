@@ -7,6 +7,7 @@ from backend.providers.tvmaze_api_provider import (
     get_all_series_from_tvmaze,
     search_series_from_tvmaze,
 )
+from backend.routes.wrapper import login_required
 from backend.routes.utils.web_utils import current_username, has_saved_recommendations, home_context, recommendation_context, save_series_opinion, series_context
 
 web_bp = Blueprint("web", __name__)
@@ -45,10 +46,8 @@ def _guard_first_connection():
 
 
 @web_bp.route("/", endpoint="index")
+@login_required
 def index():
-    if current_username() is None:
-        return redirect(url_for("web.login"))
-
     if not has_saved_recommendations(g.user):
         return redirect(url_for("web.recommendations"))
 
@@ -56,18 +55,14 @@ def index():
 
 
 @web_bp.route("/recommendations")
+@login_required
 def recommendations():
-    if current_username() is None:
-        return redirect(url_for("web.login"))
-
     return render_template("recommendation.html", **recommendation_context(g.user))
 
 
 @web_bp.route("/series/<int:serie_id>", methods=["GET", "POST"])
+@login_required
 def series_detail(serie_id: int):
-    if current_username() is None:
-        return redirect(url_for("web.login"))
-
     context = series_context(serie_id, g.user)
 
     if request.method == "GET" and not context["current_viewed"]:
@@ -83,10 +78,8 @@ def series_detail(serie_id: int):
 
 
 @web_bp.route("/search")
+@login_required
 def search():
-    if current_username() is None:
-        return redirect(url_for("web.login"))
-
     query = (request.args.get("q") or "").strip()
     shows = []
 

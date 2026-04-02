@@ -44,6 +44,18 @@
         </nav>
     </header>
     {% block content %}{% endblock %}
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/gen_account.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/series.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/recommendation.js') }}"></script>
+    <script>
+        if (typeof initCarousel === "function") initCarousel();
+        if (typeof initAuthForm === "function") initAuthForm();
+        if (typeof initGenAccount === "function") initGenAccount();
+        if (typeof initSeriesPage === "function") initSeriesPage();
+        if (typeof initRecommendationPage === "function") initRecommendationPage();
+    </script>
 </body>
 </html>
