@@ -343,6 +343,7 @@ def recommendation_context(user: User) -> dict[str, list | str]:
                 "genres": _split_stored_genres(serie.genres),
                 "summary": serie.summary,
                 "ai_pitch": saved_recommendation.ai_pitch,
+                "explanation": saved_recommendation.explanation,
                 "image": {"medium": serie.image_url or placeholder_image},
             }
         )

@@ -9,21 +9,22 @@
   --text-tertiary: #9da2a5;
   --border-color: #192d3f;
   --status-liked-text: #b9f5d9;
-  --status-liked-background: rgba(53, 155, 108, 0.16);
-  --status-liked-border: rgba(73, 196, 137, 0.25);
+  --status-liked-background: #359b6c29;
+  --status-liked-border: #49c48940;
   --status-neutral-text: var(--text-primary);
-  --status-neutral-background: rgba(255, 255, 255, 0.08);
-  --status-neutral-border: rgba(255, 255, 255, 0.14);
+  --status-neutral-background: #ffffff14;
+  --status-neutral-border: #ffffff24;
   --status-disliked-text: #ffd0d1;
-  --status-disliked-background: rgba(184, 30, 33, 0.18);
-  --status-disliked-border: rgba(184, 30, 33, 0.35);
+  --status-disliked-background: #b81e212e;
+  --status-disliked-border: #b81e2159;
+  /* PAGE AMBIENT FIND IN CODEPEN : https://codepen.io/Cemar/pen/dxopxr */
   --page-ambient:
-    radial-gradient(circle at 14% 16%, rgba(137, 34, 39, 0.24) 0%, rgba(137, 34, 39, 0.14) 15%, rgba(137, 34, 39, 0.06) 24%, transparent 38%),
-    radial-gradient(circle at 18% 22%, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.14) 16%, transparent 40%),
-    radial-gradient(circle at 84% 14%, rgba(47, 98, 78, 0.22) 0%, rgba(47, 98, 78, 0.12) 16%, rgba(47, 98, 78, 0.05) 25%, transparent 38%),
-    radial-gradient(circle at 78% 20%, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 16%, transparent 40%),
-    radial-gradient(circle at 78% 78%, rgba(137, 34, 39, 0.12) 0%, rgba(137, 34, 39, 0.05) 16%, transparent 32%),
-    radial-gradient(circle at 24% 78%, rgba(47, 98, 78, 0.1) 0%, rgba(47, 98, 78, 0.04) 16%, transparent 30%);
+    radial-gradient(circle at 14% 16%, #8922273d 0%, #89222724 15%, #8922270f 24%, transparent 38%),
+    radial-gradient(circle at 18% 22%, #00000052 0%, #00000024 16%, transparent 40%),
+    radial-gradient(circle at 84% 14%, #2f624e38 0%, #2f624e1f 16%, #2f624e0d 25%, transparent 38%),
+    radial-gradient(circle at 78% 20%, #00000047 0%, #0000001f 16%, transparent 40%),
+    radial-gradient(circle at 78% 78%, #8922271f 0%, #8922270d 16%, transparent 32%),
+    radial-gradient(circle at 24% 78%, #2f624e1a 0%, #2f624e0a 16%, transparent 30%);
 }
 
 * {
@@ -44,12 +45,11 @@ body {
   color: var(--text-primary);
 }
 
-.auth-background::after,
 .gen-account-background::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--page-ambient), linear-gradient(180deg, rgba(3, 9, 16, 0.18) 0%, rgba(3, 9, 16, 0.48) 100%);
+  background: var(--page-ambient), linear-gradient(180deg, #0309102e 0%, #0309107a 100%);
   pointer-events: none;
 }
 

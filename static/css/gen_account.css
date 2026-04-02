@@ -36,7 +36,8 @@
   font-size: 1.2rem;
 }
 
-/* UNE PARRTIE TROUVER SUR CODEPEN, A ADAPTER POUR LE PROFIL */
+/* UNE PARRTIE TROUVER SUR CODEPEN, ADAPTER POUR LE PROFIL
+   URL : https://codepen.io/jenishhrestha/pen/abgwPWd*/
 .gen-account-gemini {
   position: relative;
   margin-top: 100px;
@@ -111,7 +112,7 @@
   padding: 12px 14px;
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  background: rgba(3, 9, 16, 0.82);
+  background: #030910d1;
   backdrop-filter: blur(8px);
 }
 
@@ -191,9 +192,9 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.04) 42%,
-    rgba(0, 0, 0, 0.38) 62%,
-    rgba(0, 0, 0, 0.92) 100%
+    #0000000a 42%,
+    #00000061 62%,
+    #000000eb 100%
   );
   z-index: 1;
   pointer-events: none;
@@ -210,13 +211,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(3, 9, 16, 0.72);
+  background: #030910b8;
   color: var(--text-primary);
   font-size: 1rem;
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
-  pointer-events: none;
 }
 
 .gen-account-card-item.selected .gen-account-card-icon {
@@ -289,7 +289,7 @@
   border: none;
   border-radius: 12px;
   padding: 14px 22px;
-  background: rgba(255, 255, 255, 0.14);
+  background: #ffffff24;
   color: var(--text-primary);
   font-weight: 800;
   letter-spacing: 0.02em;

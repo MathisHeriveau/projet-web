@@ -238,8 +238,8 @@ def generate_recommendations_for_user(user):
     return items
 
 def generate_user_genre_chart(genre_counts):
-    theme_background = "#030910"
-    theme_surface = "#101c27"
+    theme_background = "none"
+    theme_surface = "none"
     theme_border = "#192d3f"
     theme_text = "#ffffff"
     theme_muted = "#9da2a5"
@@ -252,6 +252,7 @@ def generate_user_genre_chart(genre_counts):
         facecolor=theme_background,
     )
     fig.patch.set_facecolor(theme_background)
+    fig.patch.set_alpha(0)
     ax.set_facecolor(theme_surface)
     ax.spines["polar"].set_color(theme_border)
     ax.spines["polar"].set_linewidth(1.1)
@@ -355,7 +356,7 @@ def generate_user_genre_chart(genre_counts):
         format="png",
         bbox_inches="tight",
         pad_inches=0.4,
-        facecolor=fig.get_facecolor(),
+        transparent=True,
     )
     img.seek(0)
     plt.close(fig)

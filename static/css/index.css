@@ -140,7 +140,7 @@
 }
 
 .home-carousel-title .text-primary {
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: #ffffffe0 !important;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -172,9 +172,9 @@
   align-items: center;
   min-height: 34px;
   padding: 0.42rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid #ffffff24;
   border-radius: 10px;
-  background: rgba(3, 9, 16, 0.78);
+  background: #030910c7;
   color: var(--text-primary);
 }
 
@@ -186,7 +186,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.5);
+  background: #00000080;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -218,7 +218,7 @@
 .home-carousel-bullets span {
   width: 9px;
   height: 9px;
-  background: rgba(255, 255, 255, 0.35);
+  background: #ffffff59;
   border-radius: 10px;
   cursor: pointer;
 }

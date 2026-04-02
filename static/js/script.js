@@ -536,6 +536,7 @@ function initRecommendationPage() {
   const aiModalTitle = document.querySelector("#recommendation-ai-modal-title");
   const aiModalSubtitle = document.querySelector("#recommendation-ai-modal-subtitle");
   const aiModalText = document.querySelector("#recommendation-ai-modal-text");
+  const aiModalPitch = document.querySelector("#recommendation-ai-modal-pitch");
   const aiModalCloseButton = document.querySelector("#recommendation-ai-modal-close");
   const fallbackImage = "/static/images/no-image-blog.jpg";
 
@@ -560,16 +561,18 @@ function initRecommendationPage() {
     }
   }
 
-  function openAiModal(title, aiPitch) {
-    if (!aiModal || !aiModalTitle || !aiModalSubtitle || !aiModalText) {
+  function openAiModal(title, explanation, aiPitch) {
+    if (!aiModal || !aiModalTitle || !aiModalSubtitle || !aiModalText || !aiModalPitch) {
       return;
     }
 
     previousFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    aiModalTitle.textContent = "Pourquoi cette serie ?";
+    aiModalTitle.textContent = title || "Suggestion IA";
     aiModalSubtitle.textContent = `Suggestion IA pour ${title || "cette serie"}.`;
     aiModalText.textContent =
-      String(aiPitch || "").trim() || "Aucune explication de l'IA n'est disponible pour cette recommandation.";
+      String(explanation || "").trim() || "Aucune explication de l'IA n'est disponible pour cette recommandation.";
+    aiModalPitch.textContent =
+      String(aiPitch || "").trim() || "Aucun resume court n'est disponible pour cette recommandation.";
     aiModal.hidden = false;
     document.body.style.overflow = "hidden";
 
@@ -599,13 +602,16 @@ function initRecommendationPage() {
     const rawPitch = String(item?.ai_pitch || "").trim();
     const rawSummary = String(item?.summary || "").trim();
     const image = item?.image?.original || item?.image?.medium || fallbackImage;
-    const explanation = String(item?.explanation || "").trim();
+    const rawExplanation = String(item?.explanation || "").trim();
 
     const pitchContainer = document.createElement("div");
     pitchContainer.innerHTML = rawPitch;
 
     const summaryContainer = document.createElement("div");
     summaryContainer.innerHTML = rawSummary;
+
+    const explanationContainer = document.createElement("div");
+    explanationContainer.innerHTML = rawExplanation;
 
     return {
       id,
@@ -614,7 +620,7 @@ function initRecommendationPage() {
       ai_pitch: pitchContainer.textContent?.trim() || rawPitch,
       summary: summaryContainer.textContent?.trim() || rawSummary,
       image,
-      explanation,
+      explanation: explanationContainer.textContent?.trim() || rawExplanation,
     };
   }
 
@@ -648,6 +654,7 @@ function initRecommendationPage() {
     infoButton.textContent = "?";
     infoButton.setAttribute("aria-label", `Voir l'explication de l'IA pour ${item.title}`);
     infoButton.dataset.title = item.title;
+    infoButton.dataset.explanation = item.explanation;
     infoButton.dataset.aiPitch = item.ai_pitch;
     
 
@@ -720,7 +727,7 @@ function initRecommendationPage() {
 
       event.preventDefault();
       event.stopPropagation();
-      openAiModal(button.dataset.title, button.dataset.aiPitch);
+      openAiModal(button.dataset.title, button.dataset.explanation, button.dataset.aiPitch);
     });
   }
 

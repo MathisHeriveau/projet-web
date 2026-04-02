@@ -64,6 +64,7 @@
                         type="button"
                         aria-label="Voir l'explication de l'IA pour {{ item.title }}"
                         data-title="{{ item.title }}"
+                        data-explanation="{{ (item.explanation or '')|striptags }}"
                         data-ai-pitch="{{ (item.ai_pitch or '')|striptags }}"
                     >
                         ?
@@ -100,10 +101,15 @@
                 <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
             <p class="recommendation-ai-modal-kicker text-secondary">Explication de l'IA</p>
-            <h3 id="recommendation-ai-modal-title">Pourquoi cette serie ?</h3>
+            <h3 id="recommendation-ai-modal-title">Suggestion IA</h3>
             <p id="recommendation-ai-modal-subtitle" class="recommendation-ai-modal-subtitle text-tertiary"></p>
             <div class="recommendation-ai-modal-content">
+                <p class="recommendation-ai-modal-section-title">Pourquoi cette serie ?</p>
                 <p id="recommendation-ai-modal-text" class="recommendation-ai-modal-text text-tertiary"></p>
+            </div>
+            <div class="recommendation-ai-modal-content recommendation-ai-modal-content-secondary">
+                <p class="recommendation-ai-modal-section-title">Resume par l'IA</p>
+                <p id="recommendation-ai-modal-pitch" class="recommendation-ai-modal-text text-tertiary"></p>
             </div>
         </div>
     </div>
