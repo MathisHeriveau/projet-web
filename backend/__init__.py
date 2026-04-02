@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 from stat import S_IWUSR
 
@@ -40,7 +41,7 @@ def create_app() -> Flask:
     sess.init_app(app)
     
     with app.app_context():
-        # db.drop_all()
+        db.drop_all()
         db.create_all()
 
     app.register_blueprint(web_bp)

@@ -61,7 +61,7 @@
                 {% if shows %}
                     {% for show in shows %}
                         <div class="gen-account-card-item" data-show-id="{{ show.id if show.id is not none else show.name }}">
-                            <img src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg') }}" alt="{{ show.name }}">
+                            <img src="{{ show.image.original if show.image and show.image.original else (show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg')) }}" alt="{{ show.name }}">
                             <div class="gen-account-card-item-title">{{ show.name }}</div>
                         </div>
                     {% endfor %}

@@ -56,7 +56,7 @@
                 <article class="recommendation-card">
                     <img
                         class="recommendation-card-image"
-                        src="{{ item.image.medium if item.image else url_for('static', filename='images/no-image-blog.jpg') }}"
+                        src="{{ item.image.original if item.image and item.image.original else (item.image.medium if item.image and item.image.medium else url_for('static', filename='images/no-image-blog.jpg')) }}"
                         alt="{{ item.title }}"
                     >
                     <div class="recommendation-card-content">

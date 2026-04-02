@@ -76,12 +76,6 @@ def _build_home_show_payload(
     if show_id is None:
         return None
 
-    if tvmaze_show is None:
-        try:
-            tvmaze_show = get_series_from_tvmaze_by_id(show_id)
-        except Exception:
-            tvmaze_show = None
-
     image = (tvmaze_show or {}).get("image") or {}
     genres_list = (tvmaze_show or {}).get("genres") or _split_stored_genres(
         serie.genres if serie else ""
@@ -96,7 +90,7 @@ def _build_home_show_payload(
     return {
         "id": show_id,
         "name": title or "Serie inconnue",
-        "image": image.get("original") or image.get("medium") or fallback_image,
+        "image": image.get("original") or image.get("medium") or (serie.image_url if serie else None) or fallback_image,
         "year": _show_year(tvmaze_show or {}),
         "genres": ", ".join(genres_list) if genres_list else "Genres inconnus",
         "subtitle": (tvmaze_show or {}).get("type") or "Recommendation IA",
@@ -260,7 +254,7 @@ def series_context(serie_id: int, user: User) -> dict:
             "title": title,
             "genres": genres,
             "summary": summary,
-            "image": image.get("original") or image.get("medium") or placeholder_image,
+            "image": image.get("original") or image.get("medium") or (stored_serie.image_url if stored_serie else None) or placeholder_image,
         },
         "saved": request.args.get("saved") == "1",
         "current_viewed": existing_opinion.viewed if existing_opinion else False,
@@ -280,6 +274,7 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
 
     genres = [genre.strip() for genre in show.get("genres", []) if str(genre).strip()]
     summary = _clean_summary(show.get("summary"))
+    image_url = str(show.get("image") or "").strip() or None
     serie = Serie.get_by_id(show["id"])
 
     if not serie:
@@ -288,6 +283,7 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
             title=show["title"],
             genres=", ".join(genres),
             summary=summary,
+            image_url=image_url,
         )
         db.session.add(serie)
         db.session.flush()
@@ -295,6 +291,8 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
         serie.title = show["title"] or serie.title
         serie.genres = ", ".join(genres) or serie.genres
         serie.summary = summary or serie.summary
+        if image_url:
+            serie.image_url = image_url
 
     existing_opinion = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
     if existing_opinion:
@@ -328,17 +326,6 @@ def recommendation_context(user: User) -> dict[str, list | str]:
         if not serie:
             continue
 
-        image_url = placeholder_image
-
-        try:
-            tvmaze_show = get_series_from_tvmaze_by_id(serie.id)
-        except Exception:
-            tvmaze_show = None
-
-        if tvmaze_show:
-            image = tvmaze_show.get("image") or {}
-            image_url = image.get("medium") or image.get("original") or placeholder_image
-
         recommendations.append(
             {
                 "id": serie.id,
@@ -346,7 +333,7 @@ def recommendation_context(user: User) -> dict[str, list | str]:
                 "genres": _split_stored_genres(serie.genres),
                 "summary": serie.summary,
                 "ai_pitch": saved_recommendation.ai_pitch,
-                "image": {"medium": image_url},
+                "image": {"medium": serie.image_url or placeholder_image},
             }
         )
 

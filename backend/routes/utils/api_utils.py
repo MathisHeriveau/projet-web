@@ -56,14 +56,14 @@ def _build_user_profile(user):
 
 def _serialize_recommendation_item(show, ai_pitch=""):
     image = show.get("image") or {}
-    image_url = image.get("medium") or image.get("original")
+    image_url = image.get("original") or image.get("medium")
 
     return {
         "id": show.get("id"),
         "title": str(show.get("title") or show.get("name") or "").strip(),
         "genres": split_genres(show.get("genres")),
         "summary": clean_summary(show.get("summary")),
-        "image": {"medium": image_url} if image_url else None,
+        "image": {"original": image_url, "medium": image_url} if image_url else None,
         "ai_pitch": str(ai_pitch or "").strip(),
     }
 
@@ -206,6 +206,8 @@ def generate_recommendations_for_user(user):
 
     for item in items:
         genres_str = ", ".join(item["genres"])
+        image = item.get("image") or {}
+        image_url = image.get("original") or image.get("medium")
         serie = Serie.get_by_id(item["id"])
 
         if not serie:
@@ -214,6 +216,7 @@ def generate_recommendations_for_user(user):
                 title=item["title"],
                 genres=genres_str,
                 summary=item["summary"],
+                image_url=image_url,
             )
             db.session.add(serie)
             db.session.flush()
@@ -221,6 +224,8 @@ def generate_recommendations_for_user(user):
             serie.title = item["title"] or serie.title
             serie.genres = genres_str or serie.genres
             serie.summary = item["summary"] or serie.summary
+            if image_url:
+                serie.image_url = image_url
 
         db.session.add(
             Recommendation(
