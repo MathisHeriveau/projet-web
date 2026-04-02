@@ -16,7 +16,7 @@ from backend.providers.tvmaze_api_provider import (
 
 def _show_year(show: dict) -> str:
     premiered = show.get("premiered") or ""
-    return premiered[:4] if premiered else "Annee inconnue"
+    return premiered[:4] if premiered else ""
 
 
 def _split_stored_genres(genres: str | None) -> list[str]:
@@ -80,6 +80,7 @@ def _build_home_show_payload(
     genres_list = (tvmaze_show or {}).get("genres") or _split_stored_genres(
         serie.genres if serie else ""
     )
+    stored_year = str(serie.premiered_year or "").strip() if serie and serie.premiered_year else ""
     title = str(
         (tvmaze_show or {}).get("name")
         or (tvmaze_show or {}).get("title")
@@ -91,8 +92,8 @@ def _build_home_show_payload(
         "id": show_id,
         "name": title or "Serie inconnue",
         "image": image.get("original") or image.get("medium") or (serie.image_url if serie else None) or fallback_image,
-        "year": _show_year(tvmaze_show or {}),
-        "genres": ", ".join(genres_list) if genres_list else "Genres inconnus",
+        "year": _show_year(tvmaze_show or {}) or stored_year,
+        "genres": ", ".join(genres_list) if genres_list else "",
         "subtitle": (tvmaze_show or {}).get("type") or "Recommendation IA",
     }
 
@@ -247,6 +248,10 @@ def series_context(serie_id: int, user: User) -> dict:
         else (stored_serie.summary if stored_serie else "")
     )
     existing_opinion = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie_id)
+    premiered_year = (
+        _show_year(tvmaze_show or {})
+        or (str(stored_serie.premiered_year or "").strip() if stored_serie and stored_serie.premiered_year else "")
+    )
 
     return {
         "show": {
@@ -255,6 +260,7 @@ def series_context(serie_id: int, user: User) -> dict:
             "genres": genres,
             "summary": summary,
             "image": image.get("original") or image.get("medium") or (stored_serie.image_url if stored_serie else None) or placeholder_image,
+            "premiered_year": premiered_year,
         },
         "saved": request.args.get("saved") == "1",
         "current_viewed": existing_opinion.viewed if existing_opinion else False,
@@ -275,6 +281,7 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
     genres = [genre.strip() for genre in show.get("genres", []) if str(genre).strip()]
     summary = _clean_summary(show.get("summary"))
     image_url = str(show.get("image") or "").strip() or None
+    premiered_year = str(show.get("premiered_year") or "").strip() or None
     serie = Serie.get_by_id(show["id"])
 
     if not serie:
@@ -284,6 +291,7 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
             genres=", ".join(genres),
             summary=summary,
             image_url=image_url,
+            premiered_year=premiered_year,
         )
         db.session.add(serie)
         db.session.flush()
@@ -293,6 +301,8 @@ def save_series_opinion(user: User, show: dict, viewed: bool, opinion_value: str
         serie.summary = summary or serie.summary
         if image_url:
             serie.image_url = image_url
+        if premiered_year:
+            serie.premiered_year = premiered_year
 
     existing_opinion = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
     if existing_opinion:

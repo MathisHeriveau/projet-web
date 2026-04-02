@@ -532,9 +532,15 @@ function initRecommendationPage() {
   const list = document.querySelector("#recommendation-card-list");
   const empty = document.querySelector("#recommendation-empty");
   const initialItemsScript = document.querySelector("#recommendation-initial-items");
+  const aiModal = document.querySelector("#recommendation-ai-modal");
+  const aiModalTitle = document.querySelector("#recommendation-ai-modal-title");
+  const aiModalSubtitle = document.querySelector("#recommendation-ai-modal-subtitle");
+  const aiModalText = document.querySelector("#recommendation-ai-modal-text");
+  const aiModalCloseButton = document.querySelector("#recommendation-ai-modal-close");
   const fallbackImage = "/static/images/no-image-blog.jpg";
 
   let initialItems = [];
+  let previousFocusedElement = null;
 
   if (initialItemsScript) {
     try {
@@ -551,6 +557,38 @@ function initRecommendationPage() {
 
     if (acceptButton) {
       acceptButton.disabled = disabled;
+    }
+  }
+
+  function openAiModal(title, aiPitch) {
+    if (!aiModal || !aiModalTitle || !aiModalSubtitle || !aiModalText) {
+      return;
+    }
+
+    previousFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    aiModalTitle.textContent = "Pourquoi cette serie ?";
+    aiModalSubtitle.textContent = `Suggestion IA pour ${title || "cette serie"}.`;
+    aiModalText.textContent =
+      String(aiPitch || "").trim() || "Aucune explication de l'IA n'est disponible pour cette recommandation.";
+    aiModal.hidden = false;
+    document.body.style.overflow = "hidden";
+
+    if (aiModalCloseButton) {
+      aiModalCloseButton.focus();
+    }
+  }
+
+  function closeAiModal() {
+    if (!aiModal || aiModal.hidden) {
+      return;
+    }
+
+    aiModal.hidden = true;
+    document.body.style.overflow = "";
+
+    if (previousFocusedElement) {
+      previousFocusedElement.focus();
+      previousFocusedElement = null;
     }
   }
 
@@ -590,6 +628,7 @@ function initRecommendationPage() {
   function createRecommendationCard(item) {
     const card = document.createElement("article");
     const image = document.createElement("img");
+    const infoButton = document.createElement("button");
     const content = document.createElement("div");
     const link = document.createElement("a");
     const title = document.createElement("h4");
@@ -601,6 +640,13 @@ function initRecommendationPage() {
     image.className = "recommendation-card-image";
     image.src = item.image;
     image.alt = item.title;
+
+    infoButton.className = "recommendation-card-info-button";
+    infoButton.type = "button";
+    infoButton.textContent = "?";
+    infoButton.setAttribute("aria-label", `Voir l'explication de l'IA pour ${item.title}`);
+    infoButton.dataset.title = item.title;
+    infoButton.dataset.aiPitch = item.ai_pitch;
 
     content.className = "recommendation-card-content";
     link.className = "card-cover-link";
@@ -619,13 +665,14 @@ function initRecommendationPage() {
 
     pitch.className = "recommendation-card-summary text-tertiary";
     pitch.textContent =
-      truncateText(item.ai_pitch || item.summary, 100) || "Description indisponible pour cette serie.";
+      truncateText(item.summary, 100) || "Description indisponible pour cette serie.";
 
     content.appendChild(title);
     content.appendChild(genres);
     content.appendChild(pitch);
 
     card.appendChild(image);
+    card.appendChild(infoButton);
     card.appendChild(content);
     card.appendChild(link);
     return card;
@@ -660,6 +707,40 @@ function initRecommendationPage() {
 
     return data;
   }
+
+  if (list) {
+    list.addEventListener("click", (event) => {
+      const button = event.target.closest(".recommendation-card-info-button");
+      if (!button) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      openAiModal(button.dataset.title, button.dataset.aiPitch);
+    });
+  }
+
+  if (aiModal) {
+    aiModal.addEventListener("click", (event) => {
+      const closeTarget = event.target.closest("[data-modal-close=\"true\"]");
+      if (closeTarget) {
+        closeAiModal();
+      }
+    });
+  }
+
+  if (aiModalCloseButton) {
+    aiModalCloseButton.addEventListener("click", () => {
+      closeAiModal();
+    });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAiModal();
+    }
+  });
 
   if (regenerateButton) {
     regenerateButton.addEventListener("click", async () => {
