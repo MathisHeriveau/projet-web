@@ -158,7 +158,7 @@ function initGenAccount() {
   }
 
   function getShowImage(show) {
-    return show?.image?.medium || fallbackImage;
+    return show?.image?.original || show?.image?.medium || fallbackImage;
   }
 
   function getShowTitle(show) {
@@ -560,7 +560,7 @@ function initRecommendationPage() {
     const genres = Array.isArray(item?.genres) ? item.genres.filter(Boolean) : [];
     const rawPitch = String(item?.ai_pitch || "").trim();
     const rawSummary = String(item?.summary || "").trim();
-    const image = item?.image?.medium || item?.image?.original || fallbackImage;
+    const image = item?.image?.original || item?.image?.medium || fallbackImage;
 
     const pitchContainer = document.createElement("div");
     pitchContainer.innerHTML = rawPitch;

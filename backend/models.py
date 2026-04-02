@@ -38,6 +38,7 @@ class Serie(db.Model):
     title = db.Column(db.String(255), nullable=False)
     genres = db.Column(db.String(255), nullable=False)
     summary = db.Column(db.String(255), nullable=False)
+    image_url = db.Column(db.String(512), nullable=True)
 
     @classmethod
     def get_by_id(cls, id):

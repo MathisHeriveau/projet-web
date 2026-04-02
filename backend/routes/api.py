@@ -73,6 +73,8 @@ def save_liked_series():
         title = str(show.get("title") or "").strip()
         genres = split_genres(show.get("genres"))
         summary = clean_summary(show.get("summary"))
+        image = show.get("image") or {}
+        image_url = image.get("original") or image.get("medium")
 
         if not id_serie or not title:
             continue
@@ -86,6 +88,7 @@ def save_liked_series():
                 title=title,
                 genres=genres_str,
                 summary=summary,
+                image_url=image_url,
             )
             db.session.add(serie)
             db.session.flush()
@@ -93,6 +96,8 @@ def save_liked_series():
             serie.genres = (", ".join(genres) or serie.genres)
             if summary:
                 serie.summary = summary
+            if image_url:
+                serie.image_url = image_url
 
         existing_op = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
         if not existing_op:

@@ -23,7 +23,7 @@
         <article class="search-card">
             <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=show.id) }}" aria-label="Voir la fiche de {{ show.name }}"></a>
             <img
-                src="{{ show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg') }}"
+                src="{{ show.image.original if show.image and show.image.original else (show.image.medium if show.image and show.image.medium else url_for('static', filename='images/no-image-blog.jpg')) }}"
                 alt="{{ show.name }}"
             >
             <div class="search-card-content">
