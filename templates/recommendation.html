@@ -59,6 +59,15 @@
                         src="{{ item.image.original if item.image and item.image.original else (item.image.medium if item.image and item.image.medium else url_for('static', filename='images/no-image-blog.jpg')) }}"
                         alt="{{ item.title }}"
                     >
+                    <button
+                        class="recommendation-card-info-button"
+                        type="button"
+                        aria-label="Voir l'explication de l'IA pour {{ item.title }}"
+                        data-title="{{ item.title }}"
+                        data-ai-pitch="{{ (item.ai_pitch or '')|striptags }}"
+                    >
+                        ?
+                    </button>
                     <div class="recommendation-card-content">
                         <h4>{{ item.title }}</h4>
                         <div class="recommendation-card-genres">
@@ -70,12 +79,31 @@
                             {% endif %}
                         </div>
                         <p class="recommendation-card-summary text-tertiary">
-                            {{ (item.ai_pitch or item.summary or "Description indisponible pour cette serie.")|striptags|truncate(100, True, '...') }}
+                            {{ (item.summary or "Description indisponible pour cette serie.")|striptags|truncate(100, True, '...') }}
                         </p>
                     </div>
                     <a class="card-cover-link" href="{{ url_for('web.series_detail', serie_id=item.id) }}" aria-label="Voir la fiche de {{ item.title }}"></a>
                 </article>
                 {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div id="recommendation-ai-modal" class="recommendation-ai-modal" hidden>
+        <div class="recommendation-ai-modal-backdrop" data-modal-close="true"></div>
+        <div
+            class="recommendation-ai-modal-dialog"
+        >
+            <button
+                id="recommendation-ai-modal-close"
+                class="recommendation-ai-modal-close"
+                type="button">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+            <p class="recommendation-ai-modal-kicker text-secondary">Explication de l'IA</p>
+            <h3 id="recommendation-ai-modal-title">Pourquoi cette serie ?</h3>
+            <p id="recommendation-ai-modal-subtitle" class="recommendation-ai-modal-subtitle text-tertiary"></p>
+            <div class="recommendation-ai-modal-content">
+                <p id="recommendation-ai-modal-text" class="recommendation-ai-modal-text text-tertiary"></p>
             </div>
         </div>
     </div>

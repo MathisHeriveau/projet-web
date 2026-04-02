@@ -27,10 +27,16 @@
                         <span class="text-primary">{{ show.subtitle }}</span>
                         <span class="text-secondary">{{ show.name }}</span>
                     </div>
+                    {% if show.year or show.genres %}
                     <div class="home-carousel-meta">
+                        {% if show.year %}
                         <div class="home-carousel-year">{{ show.year }}</div>
+                        {% endif %}
+                        {% if show.genres %}
                         <div class="home-carousel-genres">{{ show.genres }}</div>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
                 <div class="home-carousel-bullets">

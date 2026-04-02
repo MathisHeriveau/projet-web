@@ -64,6 +64,7 @@ def _serialize_recommendation_item(show, ai_pitch=""):
         "genres": split_genres(show.get("genres")),
         "summary": clean_summary(show.get("summary")),
         "image": {"original": image_url, "medium": image_url} if image_url else None,
+        "premiered_year": str(show.get("premiered") or "").strip()[:4],
         "ai_pitch": str(ai_pitch or "").strip(),
     }
 
@@ -208,6 +209,7 @@ def generate_recommendations_for_user(user):
         genres_str = ", ".join(item["genres"])
         image = item.get("image") or {}
         image_url = image.get("original") or image.get("medium")
+        premiered_year = str(item.get("premiered_year") or "").strip() or None
         serie = Serie.get_by_id(item["id"])
 
         if not serie:
@@ -217,6 +219,7 @@ def generate_recommendations_for_user(user):
                 genres=genres_str,
                 summary=item["summary"],
                 image_url=image_url,
+                premiered_year=premiered_year,
             )
             db.session.add(serie)
             db.session.flush()
@@ -226,6 +229,8 @@ def generate_recommendations_for_user(user):
             serie.summary = item["summary"] or serie.summary
             if image_url:
                 serie.image_url = image_url
+            if premiered_year:
+                serie.premiered_year = premiered_year
 
         db.session.add(
             Recommendation(
