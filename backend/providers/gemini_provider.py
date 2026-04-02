@@ -31,9 +31,13 @@ class GeminiProvider:
                             "pitch": {
                                 "type": "string",
                                 "description": "A short, engaging 1-sentence pitch for why the user should watch it."
+                            },
+                            "explanation": {
+                                "type": "string",
+                                "description": "A concise explanation of why this series was recommended, based on the user's preferences and watch history."
                             }
                         },
-                        "required": ["title", "genre", "pitch"]
+                        "required": ["title", "genre", "pitch", "explanation"]
                     }
                 }
             },

@@ -235,6 +235,7 @@ def generate_recommendations_for_user(user):
         db.session.add(
             Recommendation(
                 ai_pitch=item["ai_pitch"],
+                explanation=item["explanation"],
                 user_id=user.id,
                 serie_id=serie.id,
             )
