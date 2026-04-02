@@ -24,9 +24,9 @@ def _read_tvmaze_payload(url):
     except HTTPError as error:
         if error.code == HTTPError.HTTP_NOT_FOUND:
             return []
-        raise Exception(f"Erreur TVMaze: {error.code}") from error
+        raise Exception(f"Le service TVMaze a retourne une erreur (code {error.code}).") from error
     except URLError as error:
-        raise Exception("Erreur TVMaze: service indisponible") from error
+        raise Exception("Le service TVMaze est indisponible pour le moment.") from error
 
 def get_all_series_from_tvmaze(raw=False, limit=None):
     all_series = []
