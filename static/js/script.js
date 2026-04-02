@@ -599,6 +599,7 @@ function initRecommendationPage() {
     const rawPitch = String(item?.ai_pitch || "").trim();
     const rawSummary = String(item?.summary || "").trim();
     const image = item?.image?.original || item?.image?.medium || fallbackImage;
+    const explanation = String(item?.explanation || "").trim();
 
     const pitchContainer = document.createElement("div");
     pitchContainer.innerHTML = rawPitch;
@@ -613,6 +614,7 @@ function initRecommendationPage() {
       ai_pitch: pitchContainer.textContent?.trim() || rawPitch,
       summary: summaryContainer.textContent?.trim() || rawSummary,
       image,
+      explanation,
     };
   }
 
@@ -647,6 +649,7 @@ function initRecommendationPage() {
     infoButton.setAttribute("aria-label", `Voir l'explication de l'IA pour ${item.title}`);
     infoButton.dataset.title = item.title;
     infoButton.dataset.aiPitch = item.ai_pitch;
+    
 
     content.className = "recommendation-card-content";
     link.className = "card-cover-link";

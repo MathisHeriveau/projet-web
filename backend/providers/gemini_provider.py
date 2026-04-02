@@ -6,8 +6,8 @@ class GeminiProvider:
     def __init__(self):
         load_dotenv()
         self.GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-        # self.model_id = "gemini-2.5-flash-lite"
-        self.model_id = "gemini-2.5-flash"
+        self.model_id = "gemini-2.5-flash-lite"
+        # self.model_id = "gemini-2.5-flash"
         self.client = genai.Client(api_key=self.GEMINI_KEY)
         self.series_recommendation_schema = {
             "type": "object",
@@ -31,9 +31,13 @@ class GeminiProvider:
                             "pitch": {
                                 "type": "string",
                                 "description": "A short, engaging 1-sentence pitch for why the user should watch it."
+                            },
+                            "explanation": {
+                                "type": "string",
+                                "description": "A concise explanation of why this series was recommended, based on the user's preferences and watch history."
                             }
                         },
-                        "required": ["title", "genre", "pitch"]
+                        "required": ["title", "genre", "pitch", "explanation"]
                     }
                 }
             },

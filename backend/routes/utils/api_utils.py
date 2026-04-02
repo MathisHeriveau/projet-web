@@ -54,7 +54,7 @@ def _build_user_profile(user):
         "disliked_genres": sorted(disliked_genres),
     }
 
-def _serialize_recommendation_item(show, ai_pitch=""):
+def _serialize_recommendation_item(show, ai_pitch="", explanation=""):
     image = show.get("image") or {}
     image_url = image.get("original") or image.get("medium")
 
@@ -66,6 +66,7 @@ def _serialize_recommendation_item(show, ai_pitch=""):
         "image": {"original": image_url, "medium": image_url} if image_url else None,
         "premiered_year": str(show.get("premiered") or "").strip()[:4],
         "ai_pitch": str(ai_pitch or "").strip(),
+        "explanation": str(explanation or "").strip(),
     }
 
 
@@ -78,7 +79,7 @@ def _resolve_recommended_serie(recommended_serie):
     if not tvmaze_results:
         return None
 
-    show = _serialize_recommendation_item(tvmaze_results[0], recommended_serie.get("pitch"))
+    show = _serialize_recommendation_item(tvmaze_results[0], recommended_serie.get("pitch"), recommended_serie.get("explanation"))
     if not show["id"] or not show["title"]:
         return None
 
@@ -161,57 +162,49 @@ def generate_recommendations_for_user(user):
     2. Try to match the vibe of their 'love' list.
     3. Do not recommend series they already love (they already watched them).
     4. Return exactly 10 recommendations.
-    5. Keep the official series title in its original language so it can be matched on TVMaze. Only the genres and pitch should be written in french.
+    5. For each recommendation, provide a short explanation of why you recommended it, based on the user's profile and recommendation text.
+    6. Keep the official series title in its original language so it can be matched on TVMaze. Only the genres and pitch should be written in french.
     """
-
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=gemini_provider.series_recommendation_schema,
         temperature=0.7,
         system_instruction=profile_context,
     )
-
     response = gemini_provider.client.models.generate_content(
         model=gemini_provider.model_id,
         contents="Based on my input data can you recommend me 10 series please?",
         config=config,
     )
-
     gemini_data = json.loads(response.text or "{}")
     recommended_series = gemini_data.get("series_list", [])
     seen_ids = set()
     items = []
-
     recommended_series = [
         recommended_serie
         for recommended_serie in recommended_series
         if str(recommended_serie.get("title") or "").strip()
     ]
-
     max_workers = min(10, len(recommended_series))
     resolved_shows = []
-
     if max_workers > 0:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             resolved_shows = list(executor.map(_resolve_recommended_serie, recommended_series))
-
     for show in resolved_shows:
         if not show or show["id"] in seen_ids:
             continue
 
         seen_ids.add(show["id"])
         items.append(show)
-
     for saved_recommendation in Recommendation.query.filter_by(user_id=user.id).all():
         db.session.delete(saved_recommendation)
-
     for item in items:
         genres_str = ", ".join(item["genres"])
         image = item.get("image") or {}
         image_url = image.get("original") or image.get("medium")
         premiered_year = str(item.get("premiered_year") or "").strip() or None
         serie = Serie.get_by_id(item["id"])
-
+        
         if not serie:
             serie = Serie(
                 id=item["id"],
@@ -235,6 +228,7 @@ def generate_recommendations_for_user(user):
         db.session.add(
             Recommendation(
                 ai_pitch=item["ai_pitch"],
+                explanation=item["explanation"],
                 user_id=user.id,
                 serie_id=serie.id,
             )
