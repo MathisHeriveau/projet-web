@@ -17,6 +17,13 @@
   --status-disliked-text: #ffd0d1;
   --status-disliked-background: rgba(184, 30, 33, 0.18);
   --status-disliked-border: rgba(184, 30, 33, 0.35);
+  --page-ambient:
+    radial-gradient(circle at 14% 16%, rgba(137, 34, 39, 0.24) 0%, rgba(137, 34, 39, 0.14) 15%, rgba(137, 34, 39, 0.06) 24%, transparent 38%),
+    radial-gradient(circle at 18% 22%, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.14) 16%, transparent 40%),
+    radial-gradient(circle at 84% 14%, rgba(47, 98, 78, 0.22) 0%, rgba(47, 98, 78, 0.12) 16%, rgba(47, 98, 78, 0.05) 25%, transparent 38%),
+    radial-gradient(circle at 78% 20%, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 16%, transparent 40%),
+    radial-gradient(circle at 78% 78%, rgba(137, 34, 39, 0.12) 0%, rgba(137, 34, 39, 0.05) 16%, transparent 32%),
+    radial-gradient(circle at 24% 78%, rgba(47, 98, 78, 0.1) 0%, rgba(47, 98, 78, 0.04) 16%, transparent 30%);
 }
 
 * {
@@ -32,8 +39,18 @@ body {
 body {
   min-height: 100vh;
   font-family: Arial, sans-serif;
-  background: var(--background-color);
+  background-color: var(--background-color);
+  background-image: var(--page-ambient), linear-gradient(180deg, #02070d 0%, var(--background-color) 100%);
   color: var(--text-primary);
+}
+
+.auth-background::after,
+.gen-account-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--page-ambient), linear-gradient(180deg, rgba(3, 9, 16, 0.18) 0%, rgba(3, 9, 16, 0.48) 100%);
+  pointer-events: none;
 }
 
 body.is-waiting,
