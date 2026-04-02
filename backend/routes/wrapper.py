@@ -8,12 +8,12 @@ def login_required(f):
     """
     def wrapper(*args, **kwargs):
         if "user" not in session:
-            return {"error": "you are not logged in"}, HTTPStatus.UNAUTHORIZED.value
+            return {"error": "Vous devez etre connecte pour acceder a cette ressource."}, HTTPStatus.UNAUTHORIZED.value
 
         user = User.get_by_username(session["user"])
         if user is None:
             session.clear()
-            return {"error": "invalid user"}, HTTPStatus.UNAUTHORIZED.value
+            return {"error": "La session utilisateur est invalide. Veuillez vous reconnecter."}, HTTPStatus.UNAUTHORIZED.value
 
         g.user = user
         return f(*args, **kwargs)

@@ -27,7 +27,7 @@ def login():
 
     user = User.get_by_username(u)
     if user is None or not check_password_hash(user.password_hash, p):
-        return {"error": "invalid credentials", "redirect": url_for("web.index")}, HTTPStatus.UNAUTHORIZED.value
+        return {"error": "Nom d'utilisateur ou mot de passe incorrect.", "redirect": url_for("web.index")}, HTTPStatus.UNAUTHORIZED.value
 
     session["user"] = u
     return {"success": "logged in"}, HTTPStatus.OK.value
@@ -45,7 +45,7 @@ def register():
     user = User.get_by_username(u)
 
     if user is not None:
-        return {"error": "username already taken", "redirect": url_for("web.index")}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "Ce nom d'utilisateur est deja utilise.", "redirect": url_for("web.index")}, HTTPStatus.BAD_REQUEST.value
 
     user = User(username=u, password_hash=generate_password_hash(p, method="pbkdf2:sha256"))
     session["user"] = u
@@ -63,7 +63,7 @@ def save_liked_series():
     user = get_current_user()
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
     
     data = request.get_json(silent=True) or {}
     valid_count = 0
@@ -110,7 +110,7 @@ def save_liked_series():
             db.session.add(opinion)
     
     if valid_count == 0:
-        return {"error": "No valid series were saved"}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "Aucune serie valide n'a pu etre enregistree."}, HTTPStatus.BAD_REQUEST.value
 
     user.first_connection = False
 
@@ -137,7 +137,7 @@ def save_recommendation_text():
     user = get_current_user()
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
     
     data = request.get_json(silent=True) or {}
     recommendation_text = str(data.get("recommendation_text") or "").strip()
@@ -157,12 +157,12 @@ def recommendation_text():
     user = get_current_user()
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
 
     try:
         text = generate_recommendation_text_for_user(user)
     except Exception as error:
-        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+        return {"error": f"Impossible de generer le texte de recommandations pour le moment. Detail : {error}"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
     return {"text": text}, HTTPStatus.OK.value
 
@@ -176,14 +176,14 @@ def recommendation():
     user = get_current_user()
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
 
     try:
         items = generate_recommendations_for_user(user)
     except json.JSONDecodeError:
-        return {"error": "Failed to parse Gemini response"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+        return {"error": "La reponse de l'IA est invalide et n'a pas pu etre interpretee."}, HTTPStatus.INTERNAL_SERVER_ERROR.value
     except Exception as error:
-        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+        return {"error": f"Impossible de generer les recommandations pour le moment. Detail : {error}"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
     return {
         "success": "recommendations generated",
@@ -209,7 +209,7 @@ def search_series():
     try:
         shows = search_series_from_tvmaze(query, limit=24)
     except Exception as error:
-        return {"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR.value
+        return {"error": f"Impossible d'effectuer la recherche de series pour le moment. Detail : {error}"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
     return {
         "source": "tvmaze",
@@ -228,23 +228,23 @@ def set_opinion():
     user = User.get_by_username(current_username)
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
     
     data = request.get_json()
     serie_id = data.get("serie_id")
     opinion_value = data.get("opinion")
 
     if not serie_id or not opinion_value:
-        return {"error": "Missing serie_id or opinion"}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "Les champs 'serie_id' et 'opinion' sont obligatoires."}, HTTPStatus.BAD_REQUEST.value
 
     try:
         opinion_enum = OpinionType(opinion_value)
     except ValueError:
-        return {"error": "Invalid opinion value"}, HTTPStatus.BAD_REQUEST.value
+        return {"error": "La valeur du champ 'opinion' est invalide."}, HTTPStatus.BAD_REQUEST.value
 
     serie = Serie.get_by_id(serie_id)
     if not serie:
-        return {"error": "Serie not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Serie introuvable."}, HTTPStatus.NOT_FOUND.value
 
     existing_opinion = Opinion.get_opinion_by_user_id_and_serie_id(user.id, serie.id)
     
@@ -268,7 +268,7 @@ def gen_genre_chart():
     user = get_current_user()
 
     if not user:
-        return {"error": "User not found"}, HTTPStatus.NOT_FOUND.value
+        return {"error": "Utilisateur introuvable."}, HTTPStatus.NOT_FOUND.value
 
     user_opinions = Opinion.get_by_user_id(user.id)
     
