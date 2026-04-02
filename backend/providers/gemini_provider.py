@@ -6,8 +6,8 @@ class GeminiProvider:
     def __init__(self):
         load_dotenv()
         self.GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-        # self.model_id = "gemini-2.5-flash-lite"
-        self.model_id = "gemini-2.5-flash"
+        self.model_id = "gemini-2.5-flash-lite"
+        # self.model_id = "gemini-2.5-flash"
         self.client = genai.Client(api_key=self.GEMINI_KEY)
         self.series_recommendation_schema = {
             "type": "object",
