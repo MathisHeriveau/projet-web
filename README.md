@@ -104,6 +104,13 @@ L'application sera accessible depuis votre navigateur à l'adresse suivante : **
 
 ---
 
+## 🔗 Liens utiles
+
+* Dépôt GitHub : https://github.com/MathisHeriveau/projet-web
+* Chat utilisé pendant le TP : https://chatgpt.com/share/69ce61a3-c440-8384-8cd1-112c2e861864
+
+---
+
 ## 🔮 Améliorations possibles (Perspectives)
 
 Bien que l'application soit fonctionnelle, plusieurs pistes d'améliorations ont été identifiées mais n'ont pas pu être implémentées :
